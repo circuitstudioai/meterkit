@@ -1,6 +1,4 @@
-import { db } from "@/lib/db";
-import { companies, users, budgetLedger, budgetLimits, policyRules, purchaseRequests, auditLog } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { db, companies, users, budgetLedger, budgetLimits, policyRules, purchaseRequests, auditLog } from "@/lib/db";
 
 async function seed() {
   console.log("🌱 Seeding database...");
@@ -133,8 +131,8 @@ async function seed() {
   console.log("✓ Created policy rules");
 
   // Seed some historical purchase requests
-  const employeeUser = createdUsers.find((u) => u.role === "employee");
-  const approverUser = createdUsers.find((u) => u.role === "approver");
+  const employeeUser = createdUsers.find((u: { role: string }) => u.role === "employee");
+  const approverUser = createdUsers.find((u: { role: string }) => u.role === "approver");
 
   if (employeeUser && approverUser) {
     const seedRequests = [

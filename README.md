@@ -1,33 +1,63 @@
 # AI Spend Wallet
 
-**By Circuit Studio**
+**By Circuit Studio**  
+**Built for the [PayPal AI Hackathon 2026](https://paypalaihackathon.devpost.com/)**
+
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 An open-source wallet where companies fund their AI tool budget via PayPal, and an AI agent enforces budgets, policies, and approvals *before* any AI spend is paid.
 
-Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
+🎥 **[Demo Video](#)** | 🚀 **[Live Demo](#)** | 📖 **[Documentation](docs/)**
+
+---
 
 ## 🎯 What It Does
 
-AI Spend Wallet solves the problem of uncontrolled AI tool spending in companies. It provides:
+AI Spend Wallet solves the problem of uncontrolled AI tool spending in companies. Traditional expense tracking happens *after* purchases. We gate spending *before* it happens.
 
-1. **PayPal Sandbox Top-ups**: Finance admins fund the wallet using PayPal Orders API
-2. **Smart Request System**: Employees request AI tool purchases through a simple form
-3. **AI Policy Agent**: Automatically evaluates requests against company policies
-4. **Deterministic Budget Rules**: Code (not AI) makes the final money decisions
-5. **Approval Workflows**: Routes requests to approvers when needed
-6. **PayPal Payouts**: Automated vendor payments through PayPal sandbox
-7. **Comprehensive Audit Trail**: Every decision logged with PayPal transaction IDs
-8. **AG Grid Spend Table**: Interactive spending analysis with filtering and exports
-9. **Agent-Buyer API**: AI agents can request purchases programmatically
+### The Problem
+- Teams buy AI tools without oversight (ChatGPT, Midjourney, API credits)
+- AI agents themselves make purchases autonomously
+- Finance has no visibility or control until the bill arrives
+- No way to enforce budgets or policies before money moves
 
-## 🚀 Live Demo
+### Our Solution
+1. **Finance funds a wallet** via PayPal Orders API
+2. **Employees/agents request purchases** through the app or API
+3. **AI policy agent evaluates** against company rules in real-time
+4. **Deterministic code decides** based on budget math (not AI guesses)
+5. **Approved purchases paid** automatically via PayPal Payouts
+6. **Complete audit trail** with PayPal transaction IDs
 
-**Demo URL**: [Will be added after deployment]
+---
 
-**Demo Accounts** (switch roles in the top-right dropdown):
-- **Finance Admin**: `admin@northwind.demo` - Top up wallet, view all spending
-- **Employee**: `employee@northwind.demo` - Request tool purchases
-- **Approver**: `approver@northwind.demo` - Review and approve/deny requests
+## ✨ Features
+
+### 🤖 AI Policy Agent
+- **Smart Evaluation**: Analyzes requests against budgets, limits, and policies
+- **Powered by Google Gemini**: Generates plain-English explanations (`gemini-2.5-flash`)
+- **Deterministic Enforcement**: Code controls money, AI explains decisions
+- **Three Outcomes**: Auto-approve, route to approver, or deny with reason
+
+### 💰 Budget Management
+- **PayPal Integration**: Top-up wallet via PayPal sandbox Orders API
+- **Real-time Balance**: Live wallet balance tracking
+- **Department Limits**: Monthly caps per department
+- **Per-Request Limits**: Maximum single purchase amounts
+- **Vendor Payouts**: Automated payments via PayPal Payouts API
+
+### 📊 Governance & Visibility
+- **AG Grid Spend Table**: Filter, sort, group, and export spending data
+- **Audit Log**: Immutable record of every decision and transaction
+- **Policy Rules**: Allowlists, blocklists, duplicate detection
+- **Role-Based Views**: Different interfaces for admins, employees, approvers
+
+### 🤝 Agentic Commerce
+- **Agent Buyer API**: AI agents request purchases programmatically
+- **Same Policy Checks**: Agents follow the same rules as humans
+- **Full Transparency**: Every agent purchase logged and auditable
+
+---
 
 ## 🏗️ Architecture
 
@@ -36,336 +66,319 @@ AI Spend Wallet solves the problem of uncontrolled AI tool spending in companies
 │   Employee      │
 │  (or AI Agent)  │
 └────────┬────────┘
-         │ 1. Request Purchase
+         │ Request Purchase
          ▼
 ┌─────────────────────────────┐
 │   AI Policy Agent           │
 │  ┌─────────────────────┐   │
-│  │ LLM Explanation     │   │
-│  │ (GPT-4o-mini)      │   │
+│  │ Gemini 2.0 Flash    │   │  ← Explains WHY
+│  │ (Explanation)       │   │
 │  └─────────────────────┘   │
 │  ┌─────────────────────┐   │
-│  │ Deterministic Rules │   │
+│  │ Deterministic Rules │   │  ← Decides WHAT
 │  │ • Budget checks     │   │
 │  │ • Limit enforcement │   │
 │  │ • Policy matching   │   │
 │  └─────────────────────┘   │
 └────────┬────────────────────┘
-         │ 2. Decision
+         │ Decision
          ▼
-    ┌────────────┐
-    │ Auto-Approve│──────┐
-    │ Route to    │      │
-    │ Approver    │──┐   │
-    │ Deny        │  │   │
-    └─────────────┘  │   │
-                     │   │
-         ┌───────────┘   │
-         ▼               ▼
-    ┌──────────┐   ┌──────────┐
-    │ Approver │   │ PayPal   │
-    │ Reviews  │   │ Payout   │
-    └────┬─────┘   └────┬─────┘
-         │              │
-         └──────┬───────┘
-                ▼
-         ┌─────────────┐
-         │ Audit Log + │
-         │ Budget      │
-         │ Ledger      │
-         └─────────────┘
+    Auto-Approve / Route / Deny
+         │
+         ▼
+    ┌──────────┐
+    │ PayPal   │
+    │ Payout   │
+    └────┬─────┘
+         │
+         ▼
+    ┌─────────────┐
+    │ Audit Log   │
+    └─────────────┘
 ```
 
-**Key Design Principle**: The AI provides explanations and classifications, but deterministic code makes all money decisions. This ensures reliability and auditability.
+**Key Design Principle**: AI provides explanations and classifications, but deterministic code makes all money decisions. This ensures reliability and auditability.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the technical design.
+
+---
 
 ## 📦 Tech Stack
 
 - **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS
 - **UI Components**: shadcn/ui (Radix UI primitives)
-- **Database**: SQLite with Drizzle ORM
+- **Database**: 
+  - Local: SQLite with better-sqlite3
+  - Production: Supabase (Postgres)
+  - ORM: Drizzle ORM
 - **PayPal APIs**:
-  - Orders v2 (top-up payments)
+  - Orders v2 (wallet top-ups)
   - Payouts v1 (vendor payments)
   - Webhooks (payment confirmations)
-- **LLM**: OpenAI-compatible API (GPT-4o-mini for cost efficiency)
+- **AI**: Google Gemini 2.5 Flash (via the official `@google/genai` SDK)
 - **Data Grid**: AG Grid Community Edition (MIT license)
+- **Deployment**: Vercel (frontend + API) + Supabase (database)
 
-## 🛠️ Setup Instructions
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
+- Node.js 18+
+- PayPal Developer account ([sign up](https://developer.paypal.com/))
+- Google Gemini API key ([get one](https://aistudio.google.com/app/apikey)) - optional
+- Supabase account for production ([sign up](https://supabase.com/)) - optional
 
-- Node.js 18+ and npm
-- PayPal Developer Account ([sign up here](https://developer.paypal.com/))
-
-### 1. Clone and Install
+### Local Development
 
 ```bash
+# 1. Clone the repository
 git clone <your-repo-url>
 cd ai-spend-wallet
+
+# 2. Install dependencies
 npm install
-```
 
-### 2. PayPal Sandbox Setup
-
-1. Go to [PayPal Developer Dashboard](https://developer.paypal.com/dashboard/)
-2. Navigate to **Apps & Credentials** → **Sandbox**
-3. Create a new app or use the default
-4. Copy your **Client ID** and **Secret**
-5. Create sandbox test accounts:
-   - One **Business** account (for receiving payouts)
-   - One **Personal** account (for making payments)
-
-### 3. Environment Variables
-
-Copy `.env.example` to `.env.local`:
-
-```bash
+# 3. Set up environment variables
 cp .env.example .env.local
-```
+# Edit .env.local with your credentials (see docs/SETUP.md)
 
-Edit `.env.local` with your credentials:
+# 4. Set up database (SQLite for local)
+npm run db:migrate
+npm run db:seed
 
-```env
-# Database
-DATABASE_PATH=./data/wallet.db
-
-# PayPal Sandbox Credentials
-PAYPAL_CLIENT_ID=your_sandbox_client_id
-PAYPAL_CLIENT_SECRET=your_sandbox_client_secret
-PAYPAL_MODE=sandbox
-PAYPAL_WEBHOOK_ID=your_webhook_id
-
-# LLM API (for policy agent explanations)
-LLM_API_KEY=your_openai_api_key
-LLM_API_URL=https://api.openai.com/v1
-LLM_MODEL=gpt-4o-mini
-
-# Application URL
-NEXT_PUBLIC_APP_URL=http://localhost:43123
-```
-
-**Note**: For the LLM API, you can use:
-- OpenAI directly
-- OpenRouter ([openrouter.ai](https://openrouter.ai/)) for cheaper alternatives
-- Together AI ([together.ai](https://together.ai/))
-- Or set `LLM_API_KEY=mock_api_key` to use mock explanations (no API calls)
-
-### 4. Database Setup
-
-```bash
-npm run db:generate  # Generate migrations
-npm run db:migrate   # Apply migrations
-npm run db:seed      # Seed demo data
-```
-
-This creates:
-- **Northwind Labs** demo company
-- 5 demo users with different roles
-- $10,000 initial wallet balance
-- Sample budget limits and policy rules
-- 3 historical transactions
-
-### 5. Run Development Server
-
-```bash
+# 5. Run development server
 npm run dev
 ```
 
-Open [http://localhost:43123](http://localhost:43123) in your browser.
+Open [http://localhost:43123](http://localhost:43123)
 
-### 6. Testing PayPal Integration
+**Demo Accounts** (switch roles in top-right):
+- `admin@northwind.demo` - Finance admin (top up wallet)
+- `employee@northwind.demo` - Employee (request purchases)
+- `approver@northwind.demo` - Approver (review requests)
 
-1. **Top Up Wallet**:
-   - Switch to Admin role
-   - Go to Wallet page
-   - Enter amount (e.g., $100)
-   - Click "Top Up with PayPal"
-   - Log in with your PayPal sandbox **Personal** account
-   - Complete the payment
+### Production Deployment
 
-2. **Request Purchase**:
-   - Switch to Employee role
-   - Go to Requests page
-   - Click "New Request"
-   - Fill in tool details (e.g., "ChatGPT Plus", $20)
-   - Submit and see the policy agent's decision
+See **[docs/SETUP.md](docs/SETUP.md)** for complete Vercel + Supabase setup instructions.
 
-3. **Approve & Pay**:
-   - Switch to Approver role (if request requires approval)
-   - Go to Approvals page
-   - Review request and click "Approve & Pay"
-   - Payout will be sent to vendor's PayPal sandbox account
+---
 
 ## 🤖 AI Tools Used
 
-### 1. **GPT-4o-mini** (OpenAI)
+### 1. Google Gemini 2.5 Flash
 - **Purpose**: Policy explanation generation
-- **How Used**: After deterministic rules evaluate a purchase request, GPT-4o-mini generates human-readable explanations of the decision for stakeholders
-- **Why**: Cost-efficient model (~$0.15 per million tokens) suitable for short explanations
-- **Key Feature**: JSON-schema output for structured responses
-- **Integration**: OpenAI-compatible REST API in `/lib/agent/policy-agent.ts`
+- **Model**: `gemini-2.5-flash` (override with `GEMINI_MODEL`)
+- **Usage**: Generates human-readable explanations of budget decisions
+- **Why**: Fast, cheap, good enough for short stakeholder copy
+- **Integration**: official `@google/genai` SDK in `/lib/agent/policy-agent.ts`
+- **Graceful degradation**: canned explanations if `GEMINI_API_KEY` is missing or the call fails
 
-### 2. **Deterministic Policy Engine** (Code-based)
+### 2. Deterministic Policy Engine (Code-based)
 - **Purpose**: Authoritative budget and policy decisions
-- **How Used**: 
+- **How it Works**: 
   - Checks wallet balance (hard requirement)
   - Enforces department monthly limits
   - Validates per-request limits
   - Matches against blocklists/allowlists
   - Detects duplicate tools in same category
-- **Why**: Money decisions must be deterministic and auditable, not subject to LLM variability
+- **Why Code, Not AI**: Money decisions must be deterministic, auditable, and not subject to LLM variability
 - **Integration**: Pure TypeScript in `/lib/policy/rules-engine.ts`
 
 **Decision Flow**:
 1. Deterministic engine produces: `auto_approve` | `route_to_approver` | `deny`
-2. LLM explains *why* that decision was made
-3. Code executes the money movement (never the LLM)
+2. Gemini 2.5 Flash explains *why* that decision was made
+3. Code executes the money movement (never the AI)
 
-This architecture ensures the AI enhances transparency without controlling funds.
+This hybrid approach ensures AI enhances transparency without controlling funds.
 
-## 🎬 Video Script Outline (3 minutes)
-
-### Act 1: The Problem (0:00-0:20)
-*Visual: Montage of AI tool websites, credit card payments, confused finance team*
-
-**Narration**: "Every team is buying AI tools. ChatGPT subscriptions. Midjourney licenses. API credits. Now AI agents are making purchases too. Who's tracking this? Who's in control?"
-
-### Act 2: Fund the Wallet (0:20-0:45)
-*Visual: Screen recording - Admin logs in, tops up $500 via PayPal sandbox*
-
-**Narration**: "Meet AI Spend Wallet. Finance sets the budget—directly through PayPal. Watch: $500 added to the company wallet. Instant, secure, tracked."
-
-### Act 3: Smart Approvals (0:45-1:25)
-*Visual: Screen recording - Three request scenarios*
-
-**Narration**: "Jordan requests ChatGPT Plus. Policy agent checks: budget OK, tool on allowlist—auto-approved. Next, Jordan wants Midjourney, but Marketing already pays for DALL-E. Routed to Sam for approval. Now Jordan tries a $5,000 tool. Denied—exceeds department limit. Every decision: policy-based, auditable."
-
-### Act 4: AI Buying AI (1:25-1:55)
-*Visual: Terminal/API call, then screen showing agent request in approvals queue*
-
-**Narration**: "Here's where it gets interesting. An AI agent requests $200 in API credits—via our API. Policy agent evaluates it like any purchase. Over limit? Sam approves. Boom—agents buying tools, with governance."
-
-### Act 5: The Dashboard (1:55-2:20)
-*Visual: AG Grid table - filtering, grouping, export to CSV*
-
-**Narration**: "Track everything in real-time. Filter by department, tool, or date. Export to CSV. Every transaction stamped with a PayPal ID."
-
-### Act 6: The Architecture & Close (2:20-2:40)
-*Visual: Architecture diagram from README*
-
-**Narration**: "How does it work? The AI explains decisions, but deterministic code controls the money. Budget checks, limit enforcement, policy matching—all in code. The LLM adds transparency, not risk. Open source. MIT licensed. Built on PayPal's platform. AI Spend Wallet: governance for the AI economy."
-
-**Text on screen**: 
-```
-AI Spend Wallet
-github.com/[your-repo]
-Built for PayPal AI Hackathon
-```
+---
 
 ## 📋 PayPal APIs Used
 
 ### 1. Orders v2 API
 - **Purpose**: Wallet top-ups
+- **Flow**: Create order → User approves in PayPal → Capture funds → Credit ledger
 - **Endpoints**:
   - `POST /v2/checkout/orders` - Create order
   - `POST /v2/checkout/orders/{id}/capture` - Capture payment
-- **Integration**: `/lib/paypal/client.ts` + `/app/api/paypal/*`
 
 ### 2. Payouts v1 API
-- **Purpose**: Vendor payments
+- **Purpose**: Vendor payments for approved purchases
+- **Flow**: Request approved → Create payout batch → PayPal processes → Debit ledger
 - **Endpoints**:
   - `POST /v1/payments/payouts` - Create payout batch
-  - `GET /v1/payments/payouts/{id}` - Check payout status
-- **Integration**: `/lib/paypal/client.ts` + `/app/api/approvals/route.ts`
+  - `GET /v1/payments/payouts/{id}` - Check status
 
 ### 3. OAuth 2.0
 - **Purpose**: API authentication
-- **Endpoint**: `POST /v1/oauth2/token`
-- **Implementation**: Token caching with auto-refresh
+- **Implementation**: Automatic token refresh with 1-minute expiry buffer
 
-### 4. Webhooks (Planned)
+### 4. Webhooks (Structure Ready)
 - **Purpose**: Async payment confirmations
-- **Endpoint**: `POST /v1/notifications/verify-webhook-signature`
-- **Status**: Structure ready in `/app/api/paypal/webhook/route.ts`
+- **Status**: Verification logic implemented, awaiting webhook URL configuration
 
-## 🧪 Testing
+All PayPal operations use **sandbox mode only** - no real money processed.
 
-Run policy engine unit tests:
+---
 
-```bash
-npm run test
-```
+## 🎯 Hackathon Alignment
 
-Test suite includes:
-- Budget limit enforcement
-- Department monthly caps
-- Per-request limit validation
-- Blocklist/allowlist matching
-- Duplicate tool detection
+### Judging Criteria
+
+✅ **Technological Implementation**
+- Full PayPal Orders + Payouts integration with real sandbox transactions
+- AI policy agent with Gemini 2.0 Flash
+- Deterministic money rules (audit-friendly and reliable)
+
+✅ **Design**
+- Complete product flow: fund → request → approve → pay → audit
+- Modern UI with shadcn/ui
+- Role-based interfaces
+- Empty states, loading states, error handling
+
+✅ **Potential Impact**
+- Real problem: $billions in uncontrolled AI SaaS spending
+- Clear target market: 20-500 employee companies (SMBs)
+- Buyers: Finance directors, IT managers, CFOs
+
+✅ **Innovation**
+- Pre-spend enforcement (not just tracking)
+- Agent-buyer capability (agents paying for tools under governance)
+- Hybrid AI + deterministic approach (best of both worlds)
+
+✅ **Presentation**
+- Complete video script ([docs/video-script.md](docs/video-script.md))
+- Clear architecture documentation
+- Strong value proposition
+
+### Prize Targets
+
+1. 🏆 **Best Use of PayPal + AI** (Primary target)
+2. 🤖 **Best Use of Agentic Commerce** (Agent buyer API)
+3. 📊 **Best Use of AG Grid** (Spend analytics table)
+4. 🎬 **Best Demo Delivery** (Professional video)
+
+---
 
 ## 📁 Project Structure
 
 ```
 ai-spend-wallet/
-├── app/                    # Next.js App Router pages
+├── app/                    # Next.js App Router
 │   ├── api/               # API routes
-│   │   ├── paypal/        # PayPal integration
-│   │   ├── requests/      # Purchase requests
+│   │   ├── paypal/        # PayPal Orders, Payouts, Webhooks
+│   │   ├── requests/      # Purchase request CRUD
 │   │   ├── approvals/     # Approval workflow
-│   │   └── audit/         # Audit logs
+│   │   ├── wallet/        # Wallet stats
+│   │   ├── session/       # Demo role switching
+│   │   └── audit/         # Audit log
 │   ├── wallet/            # Wallet management page
-│   ├── requests/          # Request history page
-│   ├── approvals/         # Approvals queue page
+│   ├── requests/          # Request creation & history
+│   ├── approvals/         # Approval queue
 │   ├── spend/             # AG Grid spend table
 │   └── audit/             # Audit log viewer
-├── components/            # Shared React components
-│   ├── ui/               # shadcn/ui components
-│   └── navigation.tsx    # Main navigation
+├── components/            # React components
+│   ├── ui/               # shadcn/ui primitives
+│   └── navigation.tsx    # Main nav with role switcher
 ├── lib/                   # Core business logic
 │   ├── paypal/           # PayPal SDK client
-│   ├── policy/           # Deterministic policy engine
-│   ├── agent/            # AI agent logic
-│   └── db.ts             # Database connection
-├── db/                    # Database schema & migrations
-│   ├── schema.ts         # Drizzle ORM schema
+│   ├── policy/           # Deterministic rules engine
+│   ├── agent/            # AI policy agent (Gemini)
+│   └── db.ts             # Database connection (SQLite/Postgres)
+├── db/                    # SQLite schema & migrations
+│   ├── schema.ts         # SQLite schema
+│   ├── schema-postgres.ts# Postgres schema
 │   ├── seed.ts           # Demo data seeder
-│   └── migrations/       # SQL migrations
+│   └── migrations/       # SQLite migrations
+├── supabase/              # Supabase (Postgres) setup
+│   └── migrations/       # Postgres SQL migrations
 ├── tests/                 # Unit tests
-└── docs/                  # Documentation
+├── docs/                  # Documentation
+│   ├── SETUP.md          # Setup instructions
+│   ├── ARCHITECTURE.md   # Technical design
+│   └── video-script.md   # 3-min video script
+├── AGENTS.md              # AI agent conventions
+├── LICENSE                # MIT License
+└── README.md              # This file
 ```
 
-## 🎯 Hackathon Categories
+---
 
-This project targets:
-- ✅ **Best Use of PayPal + AI** - Core integration of PayPal Orders & Payouts with AI policy agent
-- ✅ **Best Use of Agentic Commerce** - Agent-buyer API for AI agents to request purchases
-- ✅ **Best Use of AG Grid** - Interactive spend analytics with Community Edition
+## 🧪 Development
 
-## 🔐 Security Notes
+### Available Scripts
 
-- All secrets stored in environment variables (never committed)
-- PayPal credentials limited to sandbox scope
-- LLM provides explanations only, never controls money flow
-- All budget decisions validated in deterministic code
-- Complete audit trail with PayPal transaction IDs
+```bash
+npm run dev          # Start dev server (http://localhost:43123)
+npm run build        # Build for production
+npm run start        # Start production server
+npm test             # Run unit tests
+npm run lint         # Run ESLint
 
-## 🌟 Future Enhancements
+# Database (SQLite - local)
+npm run db:generate  # Generate migrations
+npm run db:migrate   # Apply migrations
+npm run db:seed      # Seed demo data
+npm run db:setup     # Generate + seed (one command)
+```
 
-- [ ] Slack/Teams notifications for approvals
-- [ ] Advanced budget forecasting with historical data
+### Testing
+
+```bash
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+```
+
+Tests cover:
+- Policy engine budget enforcement
+- Department monthly caps
+- Per-request limit validation
+- Blocklist/allowlist matching
+- Duplicate tool detection
+
+---
+
+## 🔐 Security
+
+- **Secrets Management**: All credentials in environment variables (never committed)
+- **Sandbox Only**: PayPal operations limited to sandbox scope
+- **AI Role**: LLM provides explanations only, never controls money flow
+- **Deterministic Validation**: All budget decisions validated in code
+- **Audit Trail**: Complete immutable log with PayPal transaction IDs
+- **SQL Injection**: Protected by Drizzle ORM parameterized queries
+
+---
+
+## 🚧 Roadmap
+
+### Post-Hackathon Enhancements
+- [ ] Real authentication (Clerk or Auth0)
 - [ ] Multi-company/tenant support
-- [ ] Receipt/invoice upload for reconciliation
+- [ ] Budget forecasting with historical data
 - [ ] Scheduled recurring payments
-- [ ] Budget recommendation engine
+- [ ] Slack/Teams approval notifications
+- [ ] Receipt/invoice upload for reconciliation
 - [ ] Integration with accounting software (QuickBooks, Xero)
+- [ ] Advanced analytics dashboard
+- [ ] Mobile app (React Native)
+
+---
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file
+MIT License - see [LICENSE](LICENSE) file.
+
+This project is fully open source and free to use, modify, and distribute.
+
+---
 
 ## 🤝 Contributing
 
-Contributions welcome! This is an open-source project built for the PayPal AI Hackathon.
+Contributions welcome! This project was built for the PayPal AI Hackathon but is designed for real-world use.
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -373,12 +386,31 @@ Contributions welcome! This is an open-source project built for the PayPal AI Ha
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📧 Contact
+---
 
-Built by **Circuit Studio** for the PayPal AI Hackathon.
+## 📧 Contact & Support
 
-Questions? Open an issue on GitHub.
+**Built by**: Circuit Studio for the PayPal AI Hackathon 2026
+
+**Questions?** Open an issue on GitHub
+
+**For AI Agents**: See [AGENTS.md](AGENTS.md) for development conventions and handoff protocol
 
 ---
 
-**Note**: This project uses PayPal's sandbox environment for all transactions. No real money is processed.
+## 🙏 Acknowledgments
+
+- **PayPal** for the hackathon and excellent sandbox APIs
+- **Google** for Gemini 2.0 Flash (fast and affordable AI)
+- **AG Grid** for the community edition data grid
+- **Vercel** for hosting and deployment platform
+- **Supabase** for managed Postgres database
+- **shadcn/ui** for beautiful React components
+
+---
+
+**Built with ❤️ using PayPal APIs, Google Gemini, and modern web tech**
+
+---
+
+**Note**: This project uses PayPal's sandbox environment for all transactions. No real money is processed. All demo data is fictional.

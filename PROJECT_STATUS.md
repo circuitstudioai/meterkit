@@ -37,9 +37,9 @@
   - Blocklist/allowlist matching
   - Duplicate tool detection
 - [x] **AI Policy Agent** (`lib/agent/policy-agent.ts`)
-  - LLM explanation generation (GPT-4o-mini)
-  - Fallback to mock explanations if no API key
-  - OpenAI-compatible API integration
+  - LLM explanation generation (Gemini 2.5 Flash via `@google/genai`)
+  - Fallback to canned explanations if `GEMINI_API_KEY` is missing
+  - Deterministic rules remain authoritative for money movement
 
 ### User Interface
 - [x] **Navigation** with role switcher (3 demo accounts)
@@ -60,7 +60,7 @@
 
 ### Documentation
 - [x] **README.md**: Complete with setup instructions, architecture, AI tools used
-- [x] **docs/architecture.md**: System architecture and design decisions
+- [x] **docs/ARCHITECTURE.md**: System architecture and design decisions
 - [x] **docs/video-script.md**: Detailed 3-minute video shooting script
 - [x] **LICENSE**: MIT License file
 
@@ -97,24 +97,17 @@
 - 1 **Business** account (to receive payouts as vendors)
 - 1 **Personal** account (to make payments for top-ups)
 
-### 2. LLM API Key (Optional but Recommended)
-**What**: OpenAI API key or OpenRouter/Together AI key
+### 2. Gemini API Key (Optional but Recommended)
+**What**: Google AI Studio key (`GEMINI_API_KEY`)
 
-**Why**: Currently using mock explanations. Real LLM makes policy decisions more transparent.
+**Why**: Without it the app uses canned explanations. With it, Gemini 2.5 Flash writes the stakeholder copy.
 
-**Options**:
-1. **OpenAI** ($5 minimum): Most reliable
-2. **OpenRouter** (pay-per-use): Cheaper alternatives
-3. **Together AI**: Fast and affordable
-4. **Keep Mock**: Works but less impressive for demo/video
-
-**Cost**: <$1 for entire hackathon if using GPT-4o-mini
+**Get a key**: https://aistudio.google.com/app/apikey
 
 **Update** `.env.local`:
 ```env
-LLM_API_KEY=your_key_here
-LLM_API_URL=https://api.openai.com/v1  # or other provider
-LLM_MODEL=gpt-4o-mini
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ### 3. Deployment (For Hosted Demo)
@@ -130,7 +123,7 @@ vercel deploy
 ```
 Then set environment variables in Vercel dashboard.
 
-**Note**: SQLite won't persist on Vercel (use `/tmp`). For persistent DB, migrate to Vercel Postgres or use Render.
+**Note**: Production uses Supabase Postgres via `DATABASE_URL`. SQLite is local-only.
 
 **Render Option** (Alternative):
 - Create web service from GitHub repo

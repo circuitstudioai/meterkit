@@ -132,7 +132,7 @@
 ## ACT 6: ARCHITECTURE & CLOSE (2:20 - 2:40)
 
 **Visual**:
-- Cut to: Architecture diagram (from docs/architecture.md)
+- Cut to: Architecture diagram (from docs/ARCHITECTURE.md)
 - Zoom into "LLM Explainer" and "Deterministic Policy Engine" boxes
 - Highlight flow: Request → Code Checks → Decision → LLM Explains → PayPal Payout
 - Fade to text screen:

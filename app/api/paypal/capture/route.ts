@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { connection, NextRequest, NextResponse } from "next/server";
 import { paypalClient } from "@/lib/paypal/client";
-import { db } from "@/lib/db";
-import { budgetLedger, auditLog } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { db, budgetLedger, auditLog } from "@/lib/db";
+import { eq, desc } from "drizzle-orm";
+import { errorMessage } from "@/lib/errors";
 
 export async function GET(request: NextRequest) {
+  await connection();
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const token = searchParams.get("token"); // PayPal order ID
+    const token = request.nextUrl.searchParams.get("token");
 
     if (!token) {
       return NextResponse.redirect(new URL("/wallet?error=missing_token", request.url));
@@ -21,21 +21,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const amount = parseFloat(capture.purchase_units[0].amount.value);
+    const unit = capture.purchase_units?.[0];
+    const amount = parseFloat(
+      unit?.payments?.captures?.[0]?.amount?.value ?? unit?.amount?.value ?? "0"
+    );
     const transactionId = capture.id;
+    const companyId = 1;
 
-    // Update budget ledger
-    const companyId = 1; // For demo, using first company
-
-    // Get current balance
     const lastEntry = await db
       .select()
       .from(budgetLedger)
       .where(eq(budgetLedger.companyId, companyId))
-      .orderBy(sql`${budgetLedger.createdAt} DESC`)
+      .orderBy(desc(budgetLedger.createdAt))
       .limit(1);
 
-    const currentBalance = lastEntry[0]?.balance || 0;
+    const currentBalance = Number(lastEntry[0]?.balance ?? 0);
     const newBalance = currentBalance + amount;
 
     await db.insert(budgetLedger).values({
@@ -62,10 +62,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       new URL(`/wallet?success=true&amount=${amount}`, request.url)
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error capturing PayPal order:", error);
     return NextResponse.redirect(
-      new URL(`/wallet?error=capture_failed&message=${encodeURIComponent(error.message)}`, request.url)
+      new URL(
+        `/wallet?error=capture_failed&message=${encodeURIComponent(errorMessage(error))}`,
+        request.url
+      )
     );
   }
 }

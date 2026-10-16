@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { purchaseRequests, auditLog } from "@/db/schema";
+import { db, purchaseRequests, auditLog } from "@/lib/db";
 import { evaluatePurchaseRequest } from "@/lib/agent/policy-agent";
+import { eq, desc } from "drizzle-orm";
+import { errorMessage } from "@/lib/errors";
+
+type CreateRequestBody = {
+  userId?: number;
+  toolName?: string;
+  toolCategory?: string;
+  amount?: number;
+  description?: string;
+  department?: string;
+  vendorEmail?: string;
+  isAgentRequest?: boolean;
+};
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as CreateRequestBody;
     const {
       userId,
       toolName,
@@ -18,15 +30,11 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!userId || !toolName || !amount || !description || !department) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const companyId = 1; // For demo, using first company
+    const companyId = 1;
 
-    // Evaluate with policy agent
     const decision = await evaluatePurchaseRequest(
       companyId,
       department,
@@ -36,8 +44,7 @@ export async function POST(request: NextRequest) {
       description
     );
 
-    // Create purchase request
-    const [request] = await db
+    const [purchaseRequest] = await db
       .insert(purchaseRequests)
       .values({
         companyId,
@@ -47,7 +54,12 @@ export async function POST(request: NextRequest) {
         amount,
         description,
         department,
-        status: decision.decision === "auto_approve" ? "approved" : decision.decision === "deny" ? "denied" : "pending",
+        status:
+          decision.decision === "auto_approve"
+            ? "approved"
+            : decision.decision === "deny"
+              ? "denied"
+              : "pending",
         policyDecision: decision.decision,
         policyReason: decision.reason,
         vendorEmail: vendorEmail || null,
@@ -55,10 +67,9 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    // Log to audit trail
     await db.insert(auditLog).values({
       companyId,
-      requestId: request.id,
+      requestId: purchaseRequest.id,
       userId,
       action: "purchase_request_created",
       details: JSON.stringify({
@@ -72,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      request,
+      request: purchaseRequest,
       decision: {
         decision: decision.decision,
         reason: decision.reason,
@@ -80,10 +91,10 @@ export async function POST(request: NextRequest) {
         checks: decision.policyChecks,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating purchase request:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to create request" },
+      { error: errorMessage(error, "Failed to create request") },
       { status: 500 }
     );
   }
@@ -96,14 +107,14 @@ export async function GET() {
     const requests = await db
       .select()
       .from(purchaseRequests)
-      .where((table) => table.companyId === companyId)
-      .orderBy((table) => table.createdAt);
+      .where(eq(purchaseRequests.companyId, companyId))
+      .orderBy(desc(purchaseRequests.createdAt));
 
     return NextResponse.json({ requests });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching requests:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to fetch requests" },
+      { error: errorMessage(error, "Failed to fetch requests") },
       { status: 500 }
     );
   }

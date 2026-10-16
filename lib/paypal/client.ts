@@ -1,17 +1,34 @@
-const PAYPAL_API_BASE =
-  process.env.PAYPAL_MODE === "live"
-    ? "https://api-m.paypal.com"
-    : "https://api-m.sandbox.paypal.com";
+import { env } from "@/lib/env";
+
+export function paypalApiBase(mode = env.paypalMode): string {
+  return mode === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+}
+
+type PayPalLink = { rel: string; href: string };
+
+export type PayPalOrder = {
+  id: string;
+  status: string;
+  links?: PayPalLink[];
+  purchase_units?: Array<{
+    amount?: { value: string };
+    payments?: { captures?: Array<{ id?: string; amount?: { value: string } }> };
+  }>;
+};
+
+export type PayPalPayout = {
+  batch_header?: { payout_batch_id?: string };
+};
 
 export class PayPalClient {
   private clientId: string;
   private clientSecret: string;
   private accessToken: string | null = null;
-  private tokenExpiry: number = 0;
+  private tokenExpiry = 0;
 
   constructor(clientId?: string, clientSecret?: string) {
-    this.clientId = clientId || process.env.PAYPAL_CLIENT_ID || "";
-    this.clientSecret = clientSecret || process.env.PAYPAL_CLIENT_SECRET || "";
+    this.clientId = clientId || env.paypalClientId;
+    this.clientSecret = clientSecret || env.paypalClientSecret;
   }
 
   async getAccessToken(): Promise<string> {
@@ -21,7 +38,7 @@ export class PayPalClient {
 
     const auth = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString("base64");
 
-    const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    const response = await fetch(`${paypalApiBase()}/v1/oauth2/token`, {
       method: "POST",
       headers: {
         Authorization: `Basic ${auth}`,
@@ -35,17 +52,16 @@ export class PayPalClient {
       throw new Error(`PayPal auth failed: ${error}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { access_token: string; expires_in: number };
     this.accessToken = data.access_token;
-    this.tokenExpiry = Date.now() + data.expires_in * 1000 - 60000; // 1 min buffer
-
+    this.tokenExpiry = Date.now() + data.expires_in * 1000 - 60000;
     return this.accessToken;
   }
 
-  async createOrder(amount: number, currency: string = "USD"): Promise<any> {
+  async createOrder(amount: number, currency = "USD"): Promise<PayPalOrder> {
     const token = await this.getAccessToken();
 
-    const response = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+    const response = await fetch(`${paypalApiBase()}/v2/checkout/orders`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -63,8 +79,8 @@ export class PayPalClient {
           },
         ],
         application_context: {
-          return_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/paypal/capture`,
-          cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/wallet`,
+          return_url: `${env.appUrl}/api/paypal/capture`,
+          cancel_url: `${env.appUrl}/wallet`,
           brand_name: "AI Spend Wallet",
           user_action: "PAY_NOW",
         },
@@ -76,42 +92,38 @@ export class PayPalClient {
       throw new Error(`PayPal order creation failed: ${error}`);
     }
 
-    return response.json();
+    return response.json() as Promise<PayPalOrder>;
   }
 
-  async captureOrder(orderId: string): Promise<any> {
+  async captureOrder(orderId: string): Promise<PayPalOrder> {
     const token = await this.getAccessToken();
 
-    const response = await fetch(
-      `${PAYPAL_API_BASE}/v2/checkout/orders/${orderId}/capture`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await fetch(`${paypalApiBase()}/v2/checkout/orders/${orderId}/capture`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
     if (!response.ok) {
       const error = await response.text();
       throw new Error(`PayPal order capture failed: ${error}`);
     }
 
-    return response.json();
+    return response.json() as Promise<PayPalOrder>;
   }
 
   async createPayout(
     recipientEmail: string,
     amount: number,
-    currency: string = "USD",
-    note: string = "AI tool payment"
-  ): Promise<any> {
+    currency = "USD",
+    note = "AI tool payment"
+  ): Promise<PayPalPayout> {
     const token = await this.getAccessToken();
-
     const batchId = `batch_${Date.now()}`;
 
-    const response = await fetch(`${PAYPAL_API_BASE}/v1/payments/payouts`, {
+    const response = await fetch(`${paypalApiBase()}/v1/payments/payouts`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -128,10 +140,10 @@ export class PayPalClient {
             recipient_type: "EMAIL",
             amount: {
               value: amount.toFixed(2),
-              currency: currency,
+              currency,
             },
             receiver: recipientEmail,
-            note: note,
+            note,
             sender_item_id: `item_${Date.now()}`,
           },
         ],
@@ -143,29 +155,26 @@ export class PayPalClient {
       throw new Error(`PayPal payout failed: ${error}`);
     }
 
-    return response.json();
+    return response.json() as Promise<PayPalPayout>;
   }
 
-  async getPayoutStatus(payoutBatchId: string): Promise<any> {
+  async getPayoutStatus(payoutBatchId: string): Promise<PayPalPayout> {
     const token = await this.getAccessToken();
 
-    const response = await fetch(
-      `${PAYPAL_API_BASE}/v1/payments/payouts/${payoutBatchId}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await fetch(`${paypalApiBase()}/v1/payments/payouts/${payoutBatchId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
     if (!response.ok) {
       const error = await response.text();
       throw new Error(`PayPal payout status check failed: ${error}`);
     }
 
-    return response.json();
+    return response.json() as Promise<PayPalPayout>;
   }
 
   async verifyWebhookSignature(
@@ -174,32 +183,32 @@ export class PayPalClient {
     body: string
   ): Promise<boolean> {
     const token = await this.getAccessToken();
-
-    const response = await fetch(
-      `${PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          transmission_id: headers["paypal-transmission-id"],
-          transmission_time: headers["paypal-transmission-time"],
-          cert_url: headers["paypal-cert-url"],
-          auth_algo: headers["paypal-auth-algo"],
-          transmission_sig: headers["paypal-transmission-sig"],
-          webhook_id: webhookId,
-          webhook_event: JSON.parse(body),
-        }),
-      }
+    const lower = Object.fromEntries(
+      Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v])
     );
+
+    const response = await fetch(`${paypalApiBase()}/v1/notifications/verify-webhook-signature`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        transmission_id: lower["paypal-transmission-id"],
+        transmission_time: lower["paypal-transmission-time"],
+        cert_url: lower["paypal-cert-url"],
+        auth_algo: lower["paypal-auth-algo"],
+        transmission_sig: lower["paypal-transmission-sig"],
+        webhook_id: webhookId,
+        webhook_event: JSON.parse(body),
+      }),
+    });
 
     if (!response.ok) {
       return false;
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as { verification_status?: string };
     return data.verification_status === "SUCCESS";
   }
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { auditLog } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { db, auditLog } from "@/lib/db";
+import { eq, desc } from "drizzle-orm";
+import { errorMessage } from "@/lib/errors";
 
 export async function GET() {
   try {
@@ -11,14 +11,14 @@ export async function GET() {
       .select()
       .from(auditLog)
       .where(eq(auditLog.companyId, companyId))
-      .orderBy(sql`${auditLog.createdAt} DESC`)
+      .orderBy(desc(auditLog.createdAt))
       .limit(100);
 
     return NextResponse.json({ logs });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching audit logs:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to fetch logs" },
+      { error: errorMessage(error, "Failed to fetch logs") },
       { status: 500 }
     );
   }

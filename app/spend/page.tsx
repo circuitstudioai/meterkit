@@ -4,9 +4,11 @@ import { useEffect, useState, useRef } from "react";
 import { Navigation } from "@/components/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AgGridReact } from "ag-grid-react";
+import { AllCommunityModule, ModuleRegistry, type ColDef } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-import { ColDef } from "ag-grid-community";
+
+ModuleRegistry.registerModules([AllCommunityModule]);
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 
@@ -121,7 +123,6 @@ export default function SpendPage() {
                 defaultColDef={defaultColDef}
                 pagination={true}
                 paginationPageSize={20}
-                enableRangeSelection={true}
                 animateRows={true}
               />
             </div>
