@@ -1,97 +1,39 @@
-# AI Spend Wallet — Architecture
+# MeterKit architecture
 
-## System overview
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                     User Interface (Next.js)                  │
-│  ┌─────────┐  ┌─────────┐  ┌──────────┐  ┌────────┐         │
-│  │ Wallet  │  │Requests │  │Approvals │  │ Spend  │         │
-│  │  Page   │  │  Page   │  │   Page   │  │ Table  │         │
-│  └────┬────┘  └────┬────┘  └────┬─────┘  └───┬────┘         │
-└───────┼───────────┼────────────┼────────────┼───────────────┘
-        │           │            │            │
-        ▼           ▼            ▼            ▼
-┌──────────────────────────────────────────────────────────────┐
-│                     API Layer (Next.js Route Handlers)        │
-│  /api/paypal/*   /api/requests   /api/approvals   /api/audit │
-└─────────┼────────────────┼────────────┼─────────────────────┘
-          │                │            │
-          │                ▼            │
-          │      ┌──────────────────────┐
-          │      │   Policy Agent       │
-          │      │  Gemini 2.5 Flash    │  ← explains WHY
-          │      │  Deterministic rules │  ← decides WHAT
-          │      └──────────┬───────────┘
-          ▼                 ▼
-┌──────────────────────────────────────────────────────────────┐
-│  PayPal sandbox (Orders + Payouts + webhooks)                │
-│  SQLite locally  |  Supabase Postgres in production          │
-└──────────────────────────────────────────────────────────────┘
-```
-
-**Rule:** Gemini explains. TypeScript in `lib/policy/decide.ts` is the only thing that can approve, route, or deny money movement.
-
-## Request evaluation
-
-1. Wallet balance — hard deny if insufficient
-2. Company blocklist — hard deny
-3. Department monthly cap — hard deny if exceeded
-4. Per-request limit — route to approver if exceeded
-5. Allowlist — route if the tool is new
-6. Duplicate category — route if a similar tool already exists
-7. Otherwise auto-approve
-
-Gemini (`gemini-2.5-flash` via `@google/genai`) then writes a 2–3 sentence explanation. If `GEMINI_API_KEY` is missing or the call fails, `lib/policy/explain.ts` returns a canned sentence.
-
-## Data model
+Rename the product in `packages/config/src/index.ts` only.
 
 ```
-companies
-  ├── users (role: admin | employee | approver)
-  ├── budget_ledger (balance tracking with PayPal IDs)
-  ├── budget_limits (per-department caps)
-  ├── policy_rules (allowlist / blocklist / duplicate_check)
-  ├── purchase_requests (status workflow)
-  └── audit_log (immutable event log)
+Builder repo                    MeterKit
+────────────                    ────────
+npx meterkit init ──AST──► wrap OpenAI/Gemini/Anthropic
+        │
+        ▼
+  @meterkit/sdk                 apps/dashboard
+  meter / withMeter             catalog · ledger · AG Grid
+        │                              │
+        ▼                              ▼
+  @meterkit/react               PayPal sandbox
+  balance · top-up · modal      Orders · Buttons/Venmo · Webhooks · Payouts
 ```
 
-SQLite schema: `db/schema.ts`  
-Postgres schema: `db/schema-postgres.ts`  
-`lib/db.ts` picks Postgres when `DATABASE_URL` is set (Supabase / Vercel), otherwise SQLite.
+## Ledger rules (code, not LLM)
 
-## PayPal
+- Debit only if `balance >= amount`
+- Same `idempotencyKey` returns the original entry
+- Conflicting key + payload → error
+- Per-user mutex so concurrent debits cannot go negative
+- `low_balance` event when balance crosses the threshold
+- Feature price comes from the catalog (`creditsPerUnit`), editable in the dashboard without redeploy
 
-- **Top-up:** Orders v2 create → buyer approves in sandbox → capture → credit ledger
-- **Payout:** Approver OKs a request → Payouts v1 batch → debit ledger
-- **Webhook:** `POST /api/paypal/webhook` verifies `PAYPAL_WEBHOOK_ID` when present
+## Modes
 
-Sandbox only. `PAYPAL_MODE` must stay `sandbox` for the hackathon.
+- **self-hosted:** in-process `MemoryLedgerStore` or the dashboard SQLite/Postgres store
+- **api:** thin HTTP client to `/api/meter/*` on the dashboard
 
-## Hosting
+## Settlement
 
-| Environment | App | Database |
-|-------------|-----|----------|
-| Local | `npm run dev` on port 43123 | SQLite at `DATABASE_PATH` |
-| Production | Vercel | Supabase Postgres (`DATABASE_URL`) |
+PayPal captures USD into the builder merchant account. MeterKit stores credit rows only. See `BRAND.settlementNote`.
 
-SQL for Supabase lives in `supabase/migrations/`. Another agent with Supabase access should run those files, then set the env vars in Vercel.
+## Monorepo
 
-## Layout
-
-| Path | Role |
-|------|------|
-| `app/` | Pages and API routes |
-| `lib/paypal/` | Sandbox REST client |
-| `lib/policy/` | Deterministic rules + canned explanations |
-| `lib/agent/` | Gemini classifier/explanation wrapper |
-| `lib/env.ts` | Single place that reads env vars |
-| `components/` | Navigation + shadcn/ui |
-| `tests/` | Policy engine unit tests (no live DB) |
-
-## Security
-
-- Secrets only in env vars; `.env.local` is gitignored
-- LLM never moves money
-- Drizzle parameterized queries
-- PayPal webhook signature check when `PAYPAL_WEBHOOK_ID` is set
+npm workspaces: `apps/*`, `packages/*`, `examples/*`. Dashboard port **43123**.

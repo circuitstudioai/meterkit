@@ -7,6 +7,9 @@
     "packages/*",
     "examples/*"
   ],
+  "bin": {
+    "meterkit": "./packages/cli/bin/meterkit.mjs"
+  },
   "scripts": {
     "dev": "npm run dev -w @meterkit/dashboard",
     "dev:chatbot": "npm run dev -w @meterkit/example-chatbot",

@@ -1,0 +1,23 @@
+{
+  "name": "@meterkit/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "meterkit": "./bin/meterkit.mjs"
+  },
+  "scripts": {
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --config ./jest.config.cjs"
+  },
+  "dependencies": {
+    "@meterkit/config": "0.1.0",
+    "ts-morph": "^27.0.2",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.5.2",
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.15",
+    "typescript": "^5"
+  }
+}
