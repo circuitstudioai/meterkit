@@ -2,9 +2,9 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
-  roots: ["<rootDir>/tests"],
+  roots: ["<rootDir>/src"],
   testMatch: ["**/*.test.ts"],
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/$1",
+    "^@meterkit/config$": "<rootDir>/../config/src/index.ts",
   },
 };

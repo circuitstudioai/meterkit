@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+**/.next/
 /out/
 
 # production
@@ -43,3 +44,5 @@ next-env.d.ts
 
 # database
 /data
+**/data/*.db
+**/data/*.db-*
