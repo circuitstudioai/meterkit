@@ -51,7 +51,7 @@ export function wrapOpenAI<
       }),
     });
     return result;
-  }) as typeof client.chat.completions.create;
+  }) as typeof create;
   return client;
 }
 

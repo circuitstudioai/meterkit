@@ -1,111 +1,86 @@
-import { pgTable, text, integer, real, serial, timestamp, boolean } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, text, integer, real, serial, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
-export const companies = pgTable("companies", {
+export const builders = pgTable("builders", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  companyId: integer("company_id").notNull().references(() => companies.id),
   email: text("email").notNull().unique(),
+  paypalEmail: text("paypal_email"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const apps = pgTable("apps", {
+  id: serial("id").primaryKey(),
+  builderId: integer("builder_id").notNull().references(() => builders.id),
   name: text("name").notNull(),
-  role: text("role").notNull(),
-  department: text("department"),
+  slug: text("slug").notNull().unique(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const budgetLedger = pgTable("budget_ledger", {
+export const features = pgTable("features", {
   id: serial("id").primaryKey(),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  amount: real("amount").notNull(),
-  type: text("type").notNull(),
-  description: text("description").notNull(),
-  balance: real("balance").notNull(),
-  paypalTransactionId: text("paypal_transaction_id"),
+  appId: integer("app_id").notNull().references(() => apps.id),
+  featureKey: text("feature_key").notNull(),
+  name: text("name").notNull(),
+  creditsPerUnit: real("credits_per_unit").notNull(),
+  unitLabel: text("unit_label").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const purchaseRequests = pgTable("purchase_requests", {
+export const endUsers = pgTable("end_users", {
   id: serial("id").primaryKey(),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  requestedBy: integer("requested_by").notNull().references(() => users.id),
-  toolName: text("tool_name").notNull(),
-  toolCategory: text("tool_category"),
-  amount: real("amount").notNull(),
-  description: text("description").notNull(),
-  department: text("department"),
+  appId: integer("app_id").notNull().references(() => apps.id),
+  externalUserId: text("external_user_id").notNull(),
+  email: text("email"),
+  name: text("name"),
+  balance: real("balance").notNull().default(0),
+  lowBalanceThreshold: real("low_balance_threshold").notNull().default(100),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const ledgerEntries = pgTable(
+  "ledger_entries",
+  {
+    id: serial("id").primaryKey(),
+    appId: integer("app_id").notNull().references(() => apps.id),
+    userId: text("user_id").notNull(),
+    type: text("type").notNull(),
+    amount: real("amount").notNull(),
+    balanceAfter: real("balance_after").notNull(),
+    featureKey: text("feature_key"),
+    units: real("units"),
+    idempotencyKey: text("idempotency_key"),
+    paypalTransactionId: text("paypal_transaction_id"),
+    metadata: text("metadata"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("ledger_idempotency_idx").on(table.idempotencyKey)]
+);
+
+export const topups = pgTable("topups", {
+  id: serial("id").primaryKey(),
+  appId: integer("app_id").notNull().references(() => apps.id),
+  userId: text("user_id").notNull(),
+  usdAmount: real("usd_amount").notNull(),
+  credits: real("credits").notNull(),
+  paypalOrderId: text("paypal_order_id"),
   status: text("status").notNull(),
-  policyDecision: text("policy_decision"),
-  policyReason: text("policy_reason"),
-  approvedBy: integer("approved_by").references(() => users.id),
-  vendorEmail: text("vendor_email"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const payouts = pgTable("payouts", {
+  id: serial("id").primaryKey(),
+  appId: integer("app_id").notNull().references(() => apps.id),
+  usdAmount: real("usd_amount").notNull(),
+  recipientEmail: text("recipient_email").notNull(),
   paypalPayoutId: text("paypal_payout_id"),
-  isAgentRequest: boolean("is_agent_request").notNull().default(false),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
-
-export const budgetLimits = pgTable("budget_limits", {
-  id: serial("id").primaryKey(),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  department: text("department"),
-  monthlyLimit: real("monthly_limit"),
-  perRequestLimit: real("per_request_limit"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const policyRules = pgTable("policy_rules", {
-  id: serial("id").primaryKey(),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  ruleType: text("rule_type").notNull(),
-  toolName: text("tool_name"),
-  category: text("category"),
-  enabled: boolean("enabled").notNull().default(true),
+  status: text("status").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const auditLog = pgTable("audit_log", {
   id: serial("id").primaryKey(),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  requestId: integer("request_id").references(() => purchaseRequests.id),
-  userId: integer("user_id").references(() => users.id),
+  appId: integer("app_id"),
   action: text("action").notNull(),
   details: text("details").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
-
-// Relations
-export const companiesRelations = relations(companies, ({ many }) => ({
-  users: many(users),
-  budgetLedger: many(budgetLedger),
-  purchaseRequests: many(purchaseRequests),
-}));
-
-export const usersRelations = relations(users, ({ one, many }) => ({
-  company: one(companies, {
-    fields: [users.companyId],
-    references: [companies.id],
-  }),
-  requestsMade: many(purchaseRequests, { relationName: "requestedBy" }),
-  requestsApproved: many(purchaseRequests, { relationName: "approvedBy" }),
-}));
-
-export const purchaseRequestsRelations = relations(purchaseRequests, ({ one }) => ({
-  company: one(companies, {
-    fields: [purchaseRequests.companyId],
-    references: [companies.id],
-  }),
-  requester: one(users, {
-    fields: [purchaseRequests.requestedBy],
-    references: [users.id],
-    relationName: "requestedBy",
-  }),
-  approver: one(users, {
-    fields: [purchaseRequests.approvedBy],
-    references: [users.id],
-    relationName: "approvedBy",
-  }),
-}));

@@ -1,111 +1,86 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
-import { relations } from "drizzle-orm";
+import { sqliteTable, text, integer, real, uniqueIndex } from "drizzle-orm/sqlite-core";
 
-export const companies = sqliteTable("companies", {
+export const builders = sqliteTable("builders", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-});
-
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  companyId: integer("company_id").notNull().references(() => companies.id),
   email: text("email").notNull().unique(),
+  paypalEmail: text("paypal_email"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export const apps = sqliteTable("apps", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  builderId: integer("builder_id").notNull().references(() => builders.id),
   name: text("name").notNull(),
-  role: text("role").notNull(), // 'admin', 'employee', 'approver'
-  department: text("department"),
+  slug: text("slug").notNull().unique(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
-export const budgetLedger = sqliteTable("budget_ledger", {
+export const features = sqliteTable("features", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  amount: real("amount").notNull(),
-  type: text("type").notNull(), // 'topup', 'spend', 'refund'
-  description: text("description").notNull(),
-  balance: real("balance").notNull(),
-  paypalTransactionId: text("paypal_transaction_id"),
+  appId: integer("app_id").notNull().references(() => apps.id),
+  featureKey: text("feature_key").notNull(),
+  name: text("name").notNull(),
+  creditsPerUnit: real("credits_per_unit").notNull(),
+  unitLabel: text("unit_label").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
-export const purchaseRequests = sqliteTable("purchase_requests", {
+export const endUsers = sqliteTable("end_users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  requestedBy: integer("requested_by").notNull().references(() => users.id),
-  toolName: text("tool_name").notNull(),
-  toolCategory: text("tool_category"),
-  amount: real("amount").notNull(),
-  description: text("description").notNull(),
-  department: text("department"),
-  status: text("status").notNull(), // 'pending', 'approved', 'denied', 'completed'
-  policyDecision: text("policy_decision"), // 'auto_approve', 'route_to_approver', 'deny'
-  policyReason: text("policy_reason"),
-  approvedBy: integer("approved_by").references(() => users.id),
-  vendorEmail: text("vendor_email"),
+  appId: integer("app_id").notNull().references(() => apps.id),
+  externalUserId: text("external_user_id").notNull(),
+  email: text("email"),
+  name: text("name"),
+  balance: real("balance").notNull().default(0),
+  lowBalanceThreshold: real("low_balance_threshold").notNull().default(100),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export const ledgerEntries = sqliteTable(
+  "ledger_entries",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    appId: integer("app_id").notNull().references(() => apps.id),
+    userId: text("user_id").notNull(),
+    type: text("type").notNull(),
+    amount: real("amount").notNull(),
+    balanceAfter: real("balance_after").notNull(),
+    featureKey: text("feature_key"),
+    units: real("units"),
+    idempotencyKey: text("idempotency_key"),
+    paypalTransactionId: text("paypal_transaction_id"),
+    metadata: text("metadata"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  },
+  (table) => [uniqueIndex("ledger_idempotency_idx").on(table.idempotencyKey)]
+);
+
+export const topups = sqliteTable("topups", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  appId: integer("app_id").notNull().references(() => apps.id),
+  userId: text("user_id").notNull(),
+  usdAmount: real("usd_amount").notNull(),
+  credits: real("credits").notNull(),
+  paypalOrderId: text("paypal_order_id"),
+  status: text("status").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export const payouts = sqliteTable("payouts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  appId: integer("app_id").notNull().references(() => apps.id),
+  usdAmount: real("usd_amount").notNull(),
+  recipientEmail: text("recipient_email").notNull(),
   paypalPayoutId: text("paypal_payout_id"),
-  isAgentRequest: integer("is_agent_request", { mode: "boolean" }).notNull().default(false),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-});
-
-export const budgetLimits = sqliteTable("budget_limits", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  department: text("department"),
-  monthlyLimit: real("monthly_limit"),
-  perRequestLimit: real("per_request_limit"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-});
-
-export const policyRules = sqliteTable("policy_rules", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  ruleType: text("rule_type").notNull(), // 'allowlist', 'blocklist', 'duplicate_check'
-  toolName: text("tool_name"),
-  category: text("category"),
-  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+  status: text("status").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
 export const auditLog = sqliteTable("audit_log", {
   id: integer("id").primaryKey({ autoIncrement: true }),
-  companyId: integer("company_id").notNull().references(() => companies.id),
-  requestId: integer("request_id").references(() => purchaseRequests.id),
-  userId: integer("user_id").references(() => users.id),
+  appId: integer("app_id"),
   action: text("action").notNull(),
-  details: text("details").notNull(), // JSON string
+  details: text("details").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
-
-// Relations
-export const companiesRelations = relations(companies, ({ many }) => ({
-  users: many(users),
-  budgetLedger: many(budgetLedger),
-  purchaseRequests: many(purchaseRequests),
-}));
-
-export const usersRelations = relations(users, ({ one, many }) => ({
-  company: one(companies, {
-    fields: [users.companyId],
-    references: [companies.id],
-  }),
-  requestsMade: many(purchaseRequests, { relationName: "requestedBy" }),
-  requestsApproved: many(purchaseRequests, { relationName: "approvedBy" }),
-}));
-
-export const purchaseRequestsRelations = relations(purchaseRequests, ({ one }) => ({
-  company: one(companies, {
-    fields: [purchaseRequests.companyId],
-    references: [companies.id],
-  }),
-  requester: one(users, {
-    fields: [purchaseRequests.requestedBy],
-    references: [users.id],
-    relationName: "requestedBy",
-  }),
-  approver: one(users, {
-    fields: [purchaseRequests.approvedBy],
-    references: [users.id],
-    relationName: "approvedBy",
-  }),
-}));

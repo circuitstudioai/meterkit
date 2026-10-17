@@ -80,7 +80,7 @@ export class PayPalClient {
         ],
         application_context: {
           return_url: `${env.appUrl}/api/paypal/capture`,
-          cancel_url: `${env.appUrl}/wallet`,
+          cancel_url: `${env.appUrl}/top-ups`,
           brand_name: "AI Spend Wallet",
           user_action: "PAY_NOW",
         },
