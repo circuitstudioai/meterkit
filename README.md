@@ -1,6 +1,6 @@
 # MeterKit
 
-**Add pay-as-you-go to any feature in 60 seconds.**
+**Prepaid credits for your app features.**
 
 Canonical repo: [github.com/circuitstudioai/meterkit](https://github.com/circuitstudioai/meterkit)
 

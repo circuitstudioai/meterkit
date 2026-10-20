@@ -9,12 +9,12 @@ export const BRAND = {
   cliBin: "meterkit",
   npmSdk: "@meterkit/sdk",
   npmReact: "@meterkit/react",
-  tagline: "Add pay-as-you-go to any feature in 60 seconds",
+  tagline: "Prepaid credits for your app features",
   org: "Circuit Studio",
   feeNote:
     "Free to start. 1–2% platform fee on top-ups above about $1,000/month. Pro dashboard later.",
   settlementNote:
-    "PayPal captures funds into the builder's own PayPal account. MeterKit only keeps a credit ledger — it does not take custody of money.",
+    "PayPal processes payments to the builder’s account. MeterKit records credit balances and usage.",
 } as const;
 
 export type Brand = typeof BRAND;

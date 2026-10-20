@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BRAND } from "@meterkit/config";
-import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   AppWindow,
@@ -31,24 +30,28 @@ export function Navigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="border-b bg-white">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <span className="rounded bg-slate-900 px-2 py-1 text-xs text-white">
-            {BRAND.name}
+    <nav className="meter-navigation" aria-label="Main navigation">
+      <div className="meter-nav-inner">
+        <Link href="/" className="meter-brand">
+          <span className="meter-brand-mark" aria-hidden="true">
+            M
           </span>
-          <span className="hidden text-sm text-slate-600 sm:inline">{BRAND.tagline}</span>
+          <span>{BRAND.name}</span>
+          <span className="meter-brand-detail">Builder console</span>
         </Link>
-        <div className="flex flex-wrap gap-1">
+        <div className="meter-nav-links">
           {items.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
             return (
-              <Link key={item.href} href={item.href}>
-                <Button variant={active ? "default" : "ghost"} size="sm" className="gap-1">
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Button>
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`meter-nav-link ${active ? "is-active" : ""}`}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                {item.label}
               </Link>
             );
           })}
