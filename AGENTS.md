@@ -2,6 +2,8 @@
 
 Canonical repo: [github.com/circuitstudioai/meterkit](https://github.com/circuitstudioai/meterkit)
 
+Product spec for contributing agents: [docs/PRD.md](docs/PRD.md). Stay inside what that document and this repo already say.
+
 Working name is **MeterKit**. Change it only in `packages/config/src/index.ts`.
 
 Hackathon deadline: **Nov 12, 2026, 12:00 PM PT**. Do not submit to Devpost. Sandbox only. Never commit secrets. No Circuit Signal / extension / Companion / roll-call content.

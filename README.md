@@ -69,6 +69,7 @@ Orders v2 create/capture, JS SDK buttons (PayPal + Venmo), webhook verification,
 
 ## Docs
 
+- [docs/PRD.md](docs/PRD.md) — product requirements for contributing agents
 - [docs/SETUP.md](docs/SETUP.md)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [docs/video-script.md](docs/video-script.md)
