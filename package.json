@@ -1,0 +1,23 @@
+{
+  "name": "meterkit",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "examples/*"
+  ],
+  "bin": {
+    "meterkit": "./packages/cli/bin/meterkit.mjs"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @meterkit/dashboard",
+    "dev:chatbot": "npm run dev -w @meterkit/example-chatbot",
+    "dev:chatbot-metered": "npm run dev -w @meterkit/example-chatbot-metered",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:migrate": "npm run db:migrate -w @meterkit/dashboard",
+    "db:seed": "npm run db:seed -w @meterkit/dashboard"
+  }
+}

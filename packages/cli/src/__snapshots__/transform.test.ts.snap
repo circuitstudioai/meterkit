@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`CLI transform snapshots wraps a Gemini generateContent call with withMeter 1`] = `
+"import { withMeter } from "@meterkit/sdk";
+import { GoogleGenAI } from "@google/genai";
+
+const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+export async function chat(userId: string, prompt: string) {
+  const response = (await withMeter(async () => client.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+  }), { featureKey: "gemini.tokens", userId, units: 1 })).result;
+  return response.text;
+}
+"
+`;
