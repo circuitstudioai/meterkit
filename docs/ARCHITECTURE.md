@@ -1,5 +1,7 @@
 # MeterKit architecture
 
+Canonical repo: [github.com/circuitstudioai/meterkit](https://github.com/circuitstudioai/meterkit)
+
 Rename the product in `packages/config/src/index.ts` only.
 
 ```

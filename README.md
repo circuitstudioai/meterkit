@@ -2,6 +2,8 @@
 
 **Add pay-as-you-go to any feature in 60 seconds.**
 
+Canonical repo: [github.com/circuitstudioai/meterkit](https://github.com/circuitstudioai/meterkit)
+
 An open-source toolkit for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/) (deadline **Thu Nov 12, 2026, 12:00 PM PT**). Builders drop a prepaid wallet onto AI calls or any metered feature. An agent installs it as a reviewable branch — never by editing `main`.
 
 The product name lives in one constant: [`packages/config/src/index.ts`](packages/config/src/index.ts).
@@ -28,6 +30,8 @@ Subscriptions do not match bursty AI usage. Rolling your own credits, top-ups, a
 ## Quick start
 
 ```bash
+git clone https://github.com/circuitstudioai/meterkit.git
+cd meterkit
 npm install
 npm run db:seed
 npm run dev                 # dashboard  http://localhost:43123

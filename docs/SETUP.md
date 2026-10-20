@@ -1,10 +1,14 @@
 # MeterKit setup
 
+Canonical repo: [github.com/circuitstudioai/meterkit](https://github.com/circuitstudioai/meterkit)
+
 Deadline: **Thu Nov 12, 2026, 12:00 PM PT**. Sandbox only. Never commit `.env.local`.
 
 ## Local
 
 ```bash
+git clone https://github.com/circuitstudioai/meterkit.git
+cd meterkit
 npm install
 cp .env.example apps/dashboard/.env.local   # add secrets there if you have them
 npm run db:seed
