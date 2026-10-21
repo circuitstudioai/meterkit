@@ -16,7 +16,7 @@ Subscriptions do not match bursty AI usage. Every Gemini (or other LLM) call on 
 
 MeterKit’s answer is a **deterministic TypeScript ledger** (authoritative balance, idempotency, concurrency), **PayPal/Venmo top-up**, and **`npx meterkit init`**. The LLM never decides prices and never moves money. PayPal holds the money; MeterKit keeps a credit ledger only.
 
-Tagline: **Add pay-as-you-go to any feature in 60 seconds.**
+Tagline: **Prepaid credits for your app features.**
 
 ---
 
@@ -67,7 +67,7 @@ Seeded demo prices (Northwind Chat):
 
 ## Goals
 
-1. Let a builder drop prepaid, pay-as-you-go metering onto AI calls (and other metered features) in about 60 seconds via `npx meterkit init`.
+1. Let a builder add prepaid metering to AI calls and other features through a reviewable branch from `npx meterkit init`.
 2. Keep money in the builder’s PayPal account; MeterKit stores credit rows only (`BRAND.settlementNote`).
 3. Keep ledger math in code, not in an LLM: debit only if `balance >= amount`; same `idempotencyKey` returns the original entry; conflicting key + payload errors; per-user mutex; `low_balance` when balance crosses the threshold.
 4. Ship a hackathon-ready **before → agent install → after → dashboard → payout** demo (see Success criteria).

@@ -1,10 +1,19 @@
-import { NextResponse } from "next/server";
-import { db, apps, endUsers, ledgerEntries, topups, payouts, features } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { NextResponse, connection } from "next/server";
+import {
+  db,
+  apps,
+  endUsers,
+  ledgerEntries,
+  topups,
+  payouts,
+  features,
+} from "@/lib/db";
 import { errorMessage } from "@/lib/errors";
 import { creditsToUsd } from "@/lib/credits";
 
 export async function GET() {
+  // Ledger reads must reflect this request, never the build-time database snapshot.
+  await connection();
   try {
     const appList = await db.select().from(apps);
     const users = await db.select().from(endUsers);
@@ -15,14 +24,14 @@ export async function GET() {
 
     const creditsOnBooks = (users as { balance: number }[]).reduce(
       (sum, u) => sum + Number(u.balance),
-      0
+      0,
     );
     const topupUsd = (topupRows as { usdAmount: number; status: string }[])
       .filter((t) => t.status === "completed")
       .reduce((sum, t) => sum + Number(t.usdAmount), 0);
     const payoutUsd = (payoutRows as { usdAmount: number }[]).reduce(
       (sum, p) => sum + Number(p.usdAmount),
-      0
+      0,
     );
     const usageCredits = (entries as { type: string; amount: number }[])
       .filter((e) => e.type === "debit")

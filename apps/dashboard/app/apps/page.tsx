@@ -1,37 +1,46 @@
 "use client";
-
-import { useEffect, useState } from "react";
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
-
-type AppRow = { id: number; name: string; slug: string; features: number; users: number };
-
+import { LoadState } from "@/components/load-state";
+import { useResource } from "@/lib/use-resource";
+type AppRow = {
+  id: number;
+  name: string;
+  slug: string;
+  features: number;
+  users: number;
+};
 export default function AppsPage() {
-  const [apps, setApps] = useState<AppRow[]>([]);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetch("/api/apps")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.error) setError(d.error);
-        else setApps(d.apps || []);
-      });
-  }, []);
-
+  const { data, loading, error, reload } = useResource<{ apps: AppRow[] }>(
+    "/api/apps",
+  );
   return (
-    <PageShell title="Apps" description="Each app has its own feature catalog and end-user wallets.">
-      {error ? <p className="text-red-700">{error}</p> : null}
-      {apps.length === 0 && !error ? (
-        <p className="text-slate-500">No apps yet. Seed the database to load the Northwind Chat demo.</p>
-      ) : null}
+    <PageShell
+      title="Apps"
+      description="Review each app’s priced features and prepaid wallets."
+    >
+      <LoadState loading={loading} error={error} retry={reload} />
+      {data?.apps.length === 0 && (
+        <div className="meter-empty">
+          <h2>No apps yet</h2>
+          <p>
+            The sample setup adds Northwind Chat with example prices and
+            wallets.
+          </p>
+          <a href="https://github.com/circuitstudioai/meterkit/blob/main/docs/SETUP.md">
+            Read the demo setup guide →
+          </a>
+        </div>
+      )}
       <div className="grid gap-4">
-        {apps.map((app) => (
+        {data?.apps.map((app) => (
           <Card key={app.id}>
             <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
-              <div>
-                <h2 className="text-lg font-semibold">{app.name}</h2>
-                <p className="text-sm text-slate-500">{app.slug}</p>
+              <div className="min-w-0">
+                <h2 className="break-words text-lg font-semibold">
+                  {app.name}
+                </h2>
+                <p className="break-all text-sm text-slate-600">{app.slug}</p>
               </div>
               <p className="text-sm text-slate-600">
                 {app.features} features · {app.users} end users

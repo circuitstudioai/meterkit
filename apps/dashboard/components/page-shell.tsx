@@ -10,12 +10,15 @@ export function PageShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="meter-shell">
       <Navigation />
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6">
+      <main id="main-content" className="meter-main">
+        <div className="meter-page-heading">
+          <p className="meter-eyebrow">Your credit ledger</p>
           <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-          {description ? <p className="mt-1 text-slate-600">{description}</p> : null}
+          {description ? (
+            <p className="mt-1 text-slate-600">{description}</p>
+          ) : null}
         </div>
         {children}
       </main>
