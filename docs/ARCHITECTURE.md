@@ -1,41 +1,11 @@
-# MeterKit architecture
+# MeterKit alpha architecture
 
-Canonical repo: [github.com/circuitstudioai/meterkit](https://github.com/circuitstudioai/meterkit)
+Human policy → inspected repository → reviewable installer plan → approved source-bound patch → independent acceptance runner.
 
-Rename the product in `packages/config/src/index.ts` only.
+Billing is a separate server-only boundary. Postgres owns wallet availability, held credits, immutable journal, idempotent jobs and completed-capture uniqueness. A transaction locks the wallet before any mutation. AI providers run outside transactions only after an atomic reservation. Result persistence and settlement are atomic; unknown outcomes remain held for recovery.
 
-```
-Builder repo                    MeterKit
-────────────                    ────────
-npx meterkit init ──AST──► wrap OpenAI/Gemini/Anthropic
-        │
-        ▼
-  @meterkit/sdk                 apps/dashboard
-  meter / withMeter             catalog · ledger · AG Grid
-        │                              │
-        ▼                              ▼
-  @meterkit/react               PayPal sandbox
-  balance · top-up · modal      Orders · Buttons/Venmo · Webhooks · Payouts
-```
+The PayPal adapter is sandbox-only. Server catalog and stored order intent determine scope, price, credit amount and merchant. Verified completed capture details must match before funding. Capture ID is the financial deduplication key; webhook event verification is mandatory, not optional.
 
-## Ledger rules (code, not LLM)
+The first adapter targets Command Center's Vite/React + Supabase architecture. Browser input never grants workspace access. Authentication and membership must be verified server-side. Existing free features and Savings math are independent of the paid explanation action.
 
-- Debit only if `balance >= amount`
-- Same `idempotencyKey` returns the original entry
-- Conflicting key + payload → error
-- Per-user mutex so concurrent debits cannot go negative
-- `low_balance` event when balance crosses the threshold
-- Feature price comes from the catalog (`creditsPerUnit`), editable in the dashboard without redeploy
-
-## Modes
-
-- **self-hosted:** in-process `MemoryLedgerStore` or the dashboard SQLite/Postgres store
-- **api:** thin HTTP client to `/api/meter/*` on the dashboard
-
-## Settlement
-
-PayPal captures USD into the builder merchant account. MeterKit stores credit rows only. See `BRAND.settlementNote`.
-
-## Monorepo
-
-npm workspaces: `apps/*`, `packages/*`, `examples/*`. Dashboard port **43123**.
+`apps/dashboard`, original SDK/store and chatbots remain historical demo surfaces. They are not accepted alpha billing infrastructure. No production rollout, hosted customer service, Payouts or platform fee is in the alpha.

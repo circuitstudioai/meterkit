@@ -1,3 +1,11 @@
+# Current alpha execution — 2026-10-22
+
+The [approved PRD](docs/PRD.md) supersedes the historical wallet demo below. Four milestones/issues track execution: [A1](https://github.com/circuitstudioai/meterkit/issues/4), [A2](https://github.com/circuitstudioai/meterkit/issues/5), [A3](https://github.com/circuitstudioai/meterkit/issues/6), [A4](https://github.com/circuitstudioai/meterkit/issues/7).
+
+New transactional Postgres kernel, verified sandbox adapter, authenticated job service and source-bound installer are under acceptance. See [evidence and gates](docs/ALPHA_TESTING.md). No production activation, live PayPal receipt or real AI plan has passed. Existing Gemini key returns API_KEY_INVALID. Command Center action/demo policy awaits confirmation.
+
+## Historical demo status (not alpha acceptance)
+
 # MeterKit status
 
 Canonical repo: [github.com/circuitstudioai/meterkit](https://github.com/circuitstudioai/meterkit)

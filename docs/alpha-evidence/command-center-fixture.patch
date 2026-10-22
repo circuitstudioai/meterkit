@@ -1,0 +1,489 @@
+diff --git a/docs/METERKIT_ALPHA_INTEGRATION.md b/docs/METERKIT_ALPHA_INTEGRATION.md
+new file mode 100644
+index 0000000..07bed9c
+--- /dev/null
++++ b/docs/METERKIT_ALPHA_INTEGRATION.md
+@@ -0,0 +1,27 @@
++# MeterKit isolated alpha
++
++Generated from an explicitly reviewed sandbox policy. Disabled by default.
++
++Set VITE_METERKIT_ALPHA_ENABLED=true and VITE_METERKIT_ALPHA_API_URL to the isolated MeterKit server origin only after owner policy approval. Visit /meterkit-alpha. Existing Command Center behavior remains the fallback. Existing Supabase sign-in is reused; no API secrets belong in the browser.
++
++Backend requires a separately approved METERKIT_ALPHA_POLICY, allowlisted workspace, verified Supabase membership/module/role, real Postgres migration, PayPal sandbox app and Gemini data approval. UI installation alone is not end-to-end payment acceptance.
++
++Run npm run build and npm test. Run MeterKit fixed Postgres contracts independently. Do not weaken tests to accept a generated patch. Never activate production billing or alter deterministic Savings calculations.
++
++Reviewed demo policy:
++```json
++{
++  "version": 1,
++  "mode": "sandbox",
++  "feature": "savings.explanation",
++  "credits": 5,
++  "packs": [
++    {
++      "id": "demo",
++      "credits": 50,
++      "amountMinor": 100,
++      "currency": "USD"
++    }
++  ]
++}
++```
+diff --git a/src/main.tsx b/src/main.tsx
+index a513583..d175a17 100644
+--- a/src/main.tsx
++++ b/src/main.tsx
+@@ -1,3 +1,4 @@
++import MeterKitAlpha from './meterkit-alpha/MeterKitAlpha'
+ import { StrictMode } from 'react'
+ import { createRoot } from 'react-dom/client'
+ import VisibilityApp from './VisibilityApp'
+@@ -7,6 +8,6 @@ import './landing.css'
+ 
+ createRoot(document.getElementById('root')!).render(
+   <StrictMode>
+-    <VisibilityApp />
++    {import.meta.env.VITE_METERKIT_ALPHA_ENABLED === 'true' && window.location.pathname === '/meterkit-alpha' ? <MeterKitAlpha /> : <VisibilityApp />}
+   </StrictMode>,
+ )
+diff --git a/src/meterkit-alpha/MeterKitAlpha.tsx b/src/meterkit-alpha/MeterKitAlpha.tsx
+new file mode 100644
+index 0000000..4537fdd
+--- /dev/null
++++ b/src/meterkit-alpha/MeterKitAlpha.tsx
+@@ -0,0 +1,254 @@
++import { useState } from "react";
++import { supabase } from "../lib/supabase";
++import "./meterkit-alpha.css";
++
++const featureCredits = 5;
++const packId = "demo";
++const api = import.meta.env.VITE_METERKIT_ALPHA_API_URL as string | undefined;
++export default function MeterKitAlpha() {
++  const [workspace, setWorkspace] = useState(
++    () => sessionStorage.getItem("meterkit-alpha-workspace") || "",
++  );
++  const [record, setRecord] = useState(
++    () => sessionStorage.getItem("meterkit-alpha-record") || "",
++  );
++  const [wallet, setWallet] = useState<{
++    available: number;
++    held: number;
++  } | null>(null);
++  const [status, setStatus] = useState(
++    "Connect your workspace to inspect its credit balance.",
++  );
++  const [result, setResult] = useState<{
++    summary: string;
++    citationIds: string[];
++  } | null>(null);
++  const [busy, setBusy] = useState(false);
++  const order = new URLSearchParams(location.search).get("token");
++  async function request(path: string, data?: Record<string, unknown>) {
++    if (!api || !supabase)
++      throw new Error(
++        "Alpha backend or sign-in is not configured. No credits were spent.",
++      );
++    const {
++      data: { session },
++    } = await supabase.auth.getSession();
++    if (!session)
++      throw new Error(
++        "Sign in to Command Center first, then return to this page.",
++      );
++    sessionStorage.setItem("meterkit-alpha-workspace", workspace);
++    sessionStorage.setItem("meterkit-alpha-record", record);
++    const response = await fetch(
++      `${api}/api/alpha${path}${data ? "" : `?workspaceId=${encodeURIComponent(workspace)}`}`,
++      {
++        method: data ? "POST" : "GET",
++        headers: {
++          Authorization: `Bearer ${session.access_token}`,
++          "Content-Type": "application/json",
++        },
++        body: data
++          ? JSON.stringify({ ...data, workspaceId: workspace })
++          : undefined,
++      },
++    );
++    const payload = await response.json();
++    if (!response.ok && payload.error === "work_failed")
++      sessionStorage.removeItem(`meterkit-alpha-job:${workspace}:${record}`);
++    if (!response.ok)
++      throw new Error(
++        payload.error === "insufficient_credits"
++          ? "Not enough credits. Top up before generating an explanation."
++          : `Request stopped: ${payload.error || response.status}`,
++      );
++    return payload;
++  }
++  async function act(work: () => Promise<void>) {
++    setBusy(true);
++    try {
++      await work();
++    } catch (error) {
++      setStatus(error instanceof Error ? error.message : "Request failed.");
++    } finally {
++      setBusy(false);
++    }
++  }
++  const balance = async () => {
++    const data = await request("/balance");
++    setWallet(data);
++  };
++  return (
++    <main className="mk-alpha">
++      <nav>
++        <a href="/">← Command Center</a>
++        <span>MeterKit / isolated alpha</span>
++      </nav>
++      <header>
++        <p className="mk-kicker">PAYPAL SANDBOX · NO REAL CHARGES</p>
++        <h1>
++          A clear explanation.
++          <br />A visible credit trail.
++        </h1>
++        <p>
++          Explain a confirmed Savings comparison. Existing calculations remain
++          unchanged. AI explanations are estimates, not financial decisions.
++        </p>
++      </header>
++      <div className="mk-grid">
++        <section aria-labelledby="mk-workspace">
++          <h2 id="mk-workspace">01 / Connect the evidence</h2>
++          <label>
++            Workspace ID
++            <input
++              value={workspace}
++              onChange={(e) => {
++                setWorkspace(e.target.value);
++                setWallet(null);
++                setResult(null);
++              }}
++              placeholder="Your alpha-enabled workspace UUID"
++              disabled={busy}
++            />
++          </label>
++          <label>
++            Savings comparison ID
++            <input
++              value={record}
++              onChange={(e) => {
++                setRecord(e.target.value);
++                setResult(null);
++              }}
++              placeholder="A confirmed comparison UUID"
++              disabled={busy}
++            />
++          </label>
++          <button
++            disabled={busy || !workspace}
++            onClick={() =>
++              act(async () => {
++                await balance();
++                setStatus(
++                  "Balance loaded. Only authorized workspaces can spend credits.",
++                );
++              })
++            }
++          >
++            Check balance
++          </button>
++          <p className="mk-note">
++            Uses your existing Command Center session. Workspace access and
++            confirmed evidence are checked on the server.
++          </p>
++        </section>
++        <section aria-labelledby="mk-wallet">
++          <h2 id="mk-wallet">02 / Review the cost</h2>
++          <div className="mk-balance">
++            <strong>{wallet?.available ?? "—"}</strong>
++            <span>available credits</span>
++          </div>
++          <p>{wallet?.held ?? "—"} credits held by unfinished work</p>
++          <p>
++            One explanation: <strong>{featureCredits} demo credits</strong>.
++            Test pricing only.
++          </p>
++          <button
++            disabled={busy || !workspace}
++            onClick={() =>
++              act(async () => {
++                const data = await request("/paypal/orders", {
++                  packId,
++                  key: crypto.randomUUID(),
++                });
++                if (data.approvalUrl) location.assign(data.approvalUrl);
++                else
++                  setStatus(
++                    "Order already exists. Confirm its approved capture.",
++                  );
++              })
++            }
++          >
++            Add credits with PayPal sandbox
++          </button>
++          {order && (
++            <button
++              disabled={busy || !workspace}
++              onClick={() =>
++                act(async () => {
++                  await request("/paypal/capture", { orderId: order });
++                  await balance();
++                  setStatus("Sandbox payment verified. Credits are available.");
++                })
++              }
++            >
++              Confirm approved top-up
++            </button>
++          )}
++        </section>
++      </div>
++      <section className="mk-action">
++        <div>
++          <h2>03 / Generate the explanation</h2>
++          <p>
++            Confirmed failures release credits. Pending work keeps its
++            reservation; retrying checks the same job.
++          </p>
++        </div>
++        <button
++          disabled={
++            busy ||
++            !workspace ||
++            !record ||
++            (wallet !== null &&
++              wallet.available < featureCredits &&
++              !sessionStorage.getItem(
++                `meterkit-alpha-job:${workspace}:${record}`,
++              ))
++          }
++          onClick={() =>
++            act(async () => {
++              const storageKey = `meterkit-alpha-job:${workspace}:${record}`;
++              const key =
++                sessionStorage.getItem(storageKey) || crypto.randomUUID();
++              sessionStorage.setItem(storageKey, key);
++              const data = await request("/jobs", {
++                key,
++                recordId: record,
++                expectedCredits: featureCredits,
++              });
++              if (data.status === "completed") {
++                setResult(data.result);
++                setStatus(
++                  "Explanation saved. Repeating this request will not charge again.",
++                );
++              } else
++                setStatus(
++                  "Work is pending. Credits remain held. Retry checks this job without starting another.",
++                );
++              await balance();
++            })
++          }
++        >
++          {busy ? "Checking…" : "Generate or retrieve explanation"}
++        </button>
++      </section>
++      <p role="status" aria-live="polite" className="mk-status">
++        {status}
++      </p>
++      {result && (
++        <article className="mk-result">
++          <p className="mk-kicker">AI EXPLANATION · REVIEW REQUIRED</p>
++          <h2>Your saved explanation</h2>
++          <p>{result.summary}</p>
++          <p>Source comparison: {result.citationIds.join(", ")}</p>
++          <small>
++            No subscription was changed. No cancellation or purchase was made.
++          </small>
++        </article>
++      )}
++      <footer>
++        Free inventory, manual governance, calculations and exports remain
++        unchanged.
++      </footer>
++    </main>
++  );
++}
+diff --git a/src/meterkit-alpha/meterkit-alpha.css b/src/meterkit-alpha/meterkit-alpha.css
+new file mode 100644
+index 0000000..eca3cb4
+--- /dev/null
++++ b/src/meterkit-alpha/meterkit-alpha.css
+@@ -0,0 +1,173 @@
++.mk-alpha {
++  max-width: 1060px;
++  margin: 0 auto;
++  padding: 28px 24px 60px;
++  color: #172e2a;
++  font:
++    16px/1.6 Georgia,
++    serif;
++}
++.mk-alpha * {
++  box-sizing: border-box;
++}
++.mk-alpha nav {
++  display: flex;
++  justify-content: space-between;
++  gap: 20px;
++  border-bottom: 1px solid #bdcfc6;
++  padding-bottom: 18px;
++  font:
++    13px/1.5 system-ui,
++    sans-serif;
++}
++.mk-alpha a {
++  color: #216448;
++}
++.mk-alpha header {
++  max-width: 760px;
++  padding: 55px 0 25px;
++}
++.mk-alpha h1 {
++  font-size: clamp(36px, 6vw, 64px);
++  line-height: 1.08;
++  letter-spacing: -1.8px;
++  font-weight: 400;
++  margin: 16px 0 24px;
++}
++.mk-alpha .mk-kicker {
++  font:
++    600 11px/1.6 system-ui,
++    sans-serif;
++  letter-spacing: 1.7px;
++  color: #31654f;
++}
++.mk-alpha h2 {
++  font:
++    600 16px/1.5 system-ui,
++    sans-serif;
++  margin: 0 0 22px;
++}
++.mk-grid {
++  display: grid;
++  grid-template-columns: 1.1fr 1fr;
++  border: 1px solid #bdcfc6;
++  background: #f7faf7;
++}
++.mk-grid section {
++  padding: 28px;
++}
++.mk-grid section + section {
++  border-left: 1px solid #bdcfc6;
++}
++.mk-alpha label {
++  display: block;
++  font:
++    13px/1.5 system-ui,
++    sans-serif;
++  margin-bottom: 20px;
++}
++.mk-alpha input {
++  display: block;
++  width: 100%;
++  padding: 13px;
++  margin-top: 8px;
++  border: 1px solid #859f93;
++  border-radius: 2px;
++  background: white;
++  color: #172e2a;
++  font:
++    14px/1.5 system-ui,
++    sans-serif;
++}
++.mk-alpha button {
++  padding: 13px 18px;
++  border: 1px solid #17583c;
++  border-radius: 2px;
++  background: #17583c;
++  color: white;
++  font:
++    600 13px/1.5 system-ui,
++    sans-serif;
++  cursor: pointer;
++  margin: 5px 8px 5px 0;
++}
++.mk-alpha button:disabled {
++  opacity: 0.5;
++  cursor: not-allowed;
++}
++.mk-alpha button:focus-visible,
++.mk-alpha input:focus-visible,
++.mk-alpha a:focus-visible {
++  outline: 3px solid #ad6e16;
++  outline-offset: 3px;
++}
++.mk-balance strong {
++  display: block;
++  font-size: 56px;
++  line-height: 1.2;
++  font-weight: 400;
++}
++.mk-balance span,
++.mk-note,
++.mk-alpha small,
++.mk-alpha footer {
++  font:
++    13px/1.6 system-ui,
++    sans-serif;
++  color: #426355;
++}
++.mk-action {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 26px;
++  padding: 30px 0;
++  border-bottom: 1px solid #bdcfc6;
++}
++.mk-action div {
++  max-width: 570px;
++}
++.mk-action h2 {
++  margin-bottom: 8px;
++}
++.mk-status {
++  padding: 14px 18px;
++  background: #edf4ee;
++  border-left: 3px solid #31654f;
++  font:
++    14px/1.7 system-ui,
++    sans-serif;
++  overflow-wrap: anywhere;
++}
++.mk-result {
++  padding: 30px;
++  border: 1px solid #bdcfc6;
++  margin-top: 28px;
++  overflow-wrap: anywhere;
++}
++.mk-alpha footer {
++  margin-top: 40px;
++}
++@media (max-width: 680px) {
++  .mk-alpha {
++    padding: 20px 18px 40px;
++  }
++  .mk-alpha nav {
++    flex-direction: column;
++    gap: 6px;
++  }
++  .mk-grid {
++    grid-template-columns: 1fr;
++  }
++  .mk-grid section + section {
++    border-left: 0;
++    border-top: 1px solid #bdcfc6;
++  }
++  .mk-action {
++    align-items: stretch;
++    flex-direction: column;
++  }
++  .mk-alpha header {
++    padding-top: 30px;
++  }
++}

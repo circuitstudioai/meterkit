@@ -1,67 +1,65 @@
-# MeterKit setup
+# Verified alpha setup
 
-Canonical repo: [github.com/circuitstudioai/meterkit](https://github.com/circuitstudioai/meterkit)
+## Local contracts
 
-Deadline: **Thu Nov 12, 2026, 12:00 PM PT**. Sandbox only. Never commit `.env.local`.
+1. Run `npm ci`.
+2. Create a disposable Postgres 16 database named `meterkit_test`. Tests refuse other database names and truncate alpha tables.
+3. Set `METERKIT_TEST_DATABASE_URL` privately.
+4. Run `npm test`, `npm run typecheck -w @meterkit/billing`, and `npm run build`.
 
-## Local
+The GitHub Alpha contracts workflow starts a disposable Postgres service. It does not need PayPal or model secrets.
 
-```bash
-git clone https://github.com/circuitstudioai/meterkit.git
-cd meterkit
-npm install
-cp .env.example apps/dashboard/.env.local   # add secrets there if you have them
-npm run db:seed
-npm run dev
+## Reviewable installer
+
+Policy example for **automated fixtures only**, not approved customer pricing:
+
+```json
+{"version":1,"mode":"sandbox","feature":"savings.explanation","credits":5,"packs":[{"id":"demo","credits":50,"amountMinor":100,"currency":"USD"}]}
 ```
 
-Dashboard: http://localhost:43123  
-Before chatbot: `npm run dev:chatbot` → :43124  
-After chatbot: `npm run dev:chatbot-metered` → :43125 (expects dashboard API on :43123)
+Keep policy/plan files outside the target working tree. Run:
 
-## PayPal sandbox
-
-1. Create a sandbox app at https://developer.paypal.com/dashboard/applications/sandbox
-2. Set `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `NEXT_PUBLIC_PAYPAL_CLIENT_ID`
-3. Personal buyer account for top-ups; Business email for builder payouts
-4. Webhook URL: `https://<vercel>/api/paypal/webhook`  
-   Events: `PAYMENT.CAPTURE.COMPLETED`, `CHECKOUT.ORDER.APPROVED`, `PAYMENT.PAYOUTS-ITEM.SUCCEEDED`, `PAYMENT.PAYOUTS-ITEM.FAILED`
-5. Set `PAYPAL_WEBHOOK_ID` so signatures are verified (`@meterkit/sdk` `verifyPaypalWebhook`)
-
-Without credentials the UI still loads seeded ledger data; live capture/payout will fail until keys exist.
-
-## Gemini
-
-Optional `GEMINI_API_KEY` from https://aistudio.google.com/app/apikey  
-Model default: `gemini-2.5-flash`. Missing key → demo/canned text.
-
-## Supabase + Vercel
-
-1. Create a Supabase project.
-2. Run `apps/dashboard/supabase/migrations/20261017000000_meterkit.sql` in the SQL editor.
-3. Set `DATABASE_URL` (pooler URI is fine; the app uses `prepare: false`).
-4. Deploy `apps/dashboard` on Vercel. Set every var from `.env.example`.
-5. Point `NEXT_PUBLIC_APP_URL` and PayPal return/webhook URLs at the Vercel host.
-
-SQLite is local-only (`DATABASE_PATH`). Production must use Postgres.
-
-## CLI
-
-```bash
-npx meterkit init                  # dry-run (default)
-npx meterkit init --apply          # create a new branch; never writes main
-npx meterkit init --gemini         # optional assist; AST transforms still default
-npx meterkit init --feature=pdf.export
+```sh
+node packages/cli/bin/meterkit.mjs plan /path/to/command-center --policy=/tmp/policy.json --out=/tmp/plan.json
+# Read the complete plan, policy and patch; do not approve only the filename list.
+node packages/cli/bin/meterkit.mjs apply /path/to/command-center --plan=/tmp/plan.json --approve=EXACT_PLAN_HASH
 ```
 
-Writes `.env.example` only (no secrets). Opens no PR unless you push the branch yourself.
+`--ai` performs a real Gemini advisory review of allowlisted stack metadata, policy, paths and acceptance requirements. It never sends repository source or env files. Missing/invalid credentials fail explicitly. The deterministic adapter owns edits; AI output cannot rewrite tests or prices.
 
-## Demo script
+Only the inspected Command Center entry point is supported initially. Unknown entry points/auth mappings require clarification. The generated route is disabled until `VITE_METERKIT_ALPHA_ENABLED=true`; set `VITE_METERKIT_ALPHA_API_URL` to the isolated backend origin. Existing Supabase session is reused.
 
-1. Open the unmetered chatbot (:43124). Send a message and export PDF — no wallet.
-2. Run `npx meterkit init examples/chatbot` and show the plan.
-3. Open the metered chatbot (:43125) and dashboard (:43123).
-4. Send messages as `user_alex` — balance drops 5 credits each.
-5. Export PDF — 25 credits.
-6. Top up with PayPal sandbox (or inspect seeded top-ups if keys are missing).
-7. Cash out on Payouts. Show audit log PayPal IDs.
+## Isolated backend
+
+Do not use a production Signal database. Set `DATABASE_URL` for a dedicated alpha Postgres database, then run `npm run db:alpha`. The additive `meterkit_alpha` schema never changes Signal tables. The schema is not exposed to Supabase public/anon clients.
+
+Server variables:
+
+- `METERKIT_ALPHA_ENABLED=true` only after policy and access approval.
+- `METERKIT_ALPHA_ORIGIN`: exact isolated Command Center frontend origin.
+- `SIGNAL_SUPABASE_URL`, `SIGNAL_SUPABASE_ANON_KEY`: approved isolated Signal auth/data project. The anon key is public; membership/role/module checks still apply server-side.
+- `METERKIT_ALPHA_POLICY`: JSON containing `approved:true`, `appId`, `feature:"savings.explanation"`, integer `credits`, allowlisted `workspaceIds`, and `packs` mapping IDs to integer `credits`/`amountMinor`. Use the same reviewed prices as the installer.
+- `METERKIT_ALPHA_DATA_APPROVED=true` only for approved data handling; the adapter sends record ID, revision, currency and deterministic comparison totals, not contracts or employee data.
+- `GEMINI_API_KEY`, `GEMINI_MODEL` for real explanations/planning.
+- `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_MERCHANT_ID`, `PAYPAL_WEBHOOK_ID`: sandbox credentials only.
+
+No credentials belong in browser variables, plans, issues or logs. The backend remains HTTP503 when disabled/unconfigured.
+
+## PayPal sandbox configuration
+
+1. Create a sandbox Business merchant, Personal buyer and REST app.
+2. Store client ID/secret and the receiving merchant ID server-side. No live mode is supported by the alpha adapter.
+3. Once the isolated preview is deployed, register `https://EXACT_ALPHA_BACKEND/api/alpha/paypal/webhook` for `PAYMENT.CAPTURE.COMPLETED`. Store that webhook ID server-side. Do not register the legacy `/api/paypal/webhook`.
+4. Verify a real buyer approval, capture, duplicate signed webhook and persisted credits. Record IDs/statuses only, not credentials.
+
+Orders v2 and webhook verification follow [official PayPal Orders documentation](https://developer.paypal.com/api/orders/v2) and [webhook verification documentation](https://developer.paypal.com/api/webhooks/v1). Fixture tests do not prove live API acceptance.
+
+## Browser fixture harness
+
+The local-only `scripts/alpha-ui-fixture-server.mts` requires a disposable loopback database named `meterkit_ui_test`. It binds only to 127.0.0.1:43129. It uses real Postgres, but **simulated PayPal, AI and auth**. Do not deploy it.
+
+`verify-alpha-ui.mjs` requires the generated target running on 127.0.0.1:43128 with explicitly fictional Supabase build variables. Set `METERKIT_PLAYWRIGHT_PATH` to an installed `@playwright/test/index.mjs`. Screenshots/results are labelled fixtures.
+
+## Alpha exit gates
+
+See [ALPHA_TESTING.md](ALPHA_TESTING.md). No production activation, fee collection or Devpost submission is authorized by these setup instructions.
