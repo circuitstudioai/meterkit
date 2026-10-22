@@ -10,3 +10,12 @@ Each milestone requires executable evidence, not only implemented files. No prod
 | A4 Command Center alpha | Gated wallet + approved first paid action, deterministic evidence preserved | Isolated end-to-end auth, top-up, action, low-balance, retry and failure test; test instructions |
 
 Status is tracked in GitHub milestones/issues and docs/ALPHA_TESTING.md. Runtime/provider access and unapproved product policy remain explicit gates. Existing launch gates stay unchanged.
+
+## Execution checkpoint
+
+- A1 accepted: [issue4](https://github.com/circuitstudioai/meterkit/issues/4), [CI receipt](https://github.com/circuitstudioai/meterkit/actions/runs/39829019393).
+- A2 implementation/fixture contracts delivered; real sandbox receipt pending owner access.
+- A3 deterministic installer/safety delivered; real AI advisory receipt pending valid credential location.
+- A4 disposable-clone UI/build/tests delivered; policy approval, hosted backend and real authentication/provider flow pending.
+
+[Draft review PR8](https://github.com/circuitstudioai/meterkit/pull/8). No merge or production activation.

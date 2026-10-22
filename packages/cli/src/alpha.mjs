@@ -146,6 +146,39 @@ export async function makePlan(
     throw new Error("Unsupported stack: Vite + React + Supabase required.");
   if (!fs.existsSync(path.join(root, "src/lib/supabase.ts")))
     throw new Error("Unknown auth mapping. Clarification required.");
+  const authSource = safeRead(root, "src/lib/supabase.ts");
+  if (
+    ![
+      "@supabase/supabase-js",
+      "createClient",
+      "VITE_SUPABASE_URL",
+      "VITE_SUPABASE_ANON_KEY",
+      "export const supabase",
+    ].every((part) => authSource.includes(part))
+  )
+    throw new Error("Unknown auth mapping. Clarification required.");
+  const migrationDir = path.join(root, "supabase/migrations");
+  if (!fs.existsSync(migrationDir))
+    throw new Error(
+      "Missing server permission contracts. Clarification required.",
+    );
+  const sql = fs
+    .readdirSync(migrationDir)
+    .filter((file) => file.endsWith(".sql"))
+    .map((file) => safeRead(root, `supabase/migrations/${file}`))
+    .join("\n")
+    .toLowerCase();
+  if (
+    ![
+      "public.can_edit_workspace",
+      "public.workspace_feature_access",
+      "public.savings_cases",
+      "public.workspace_members",
+    ].every((name) => sql.includes(name))
+  )
+    throw new Error(
+      "Missing server permission contracts. Clarification required.",
+    );
   const plan = {
     version: 1,
     adapter: "command-center-vite-supabase-v1",

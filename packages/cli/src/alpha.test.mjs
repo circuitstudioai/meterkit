@@ -31,7 +31,12 @@ function fixture() {
   );
   fs.writeFileSync(
     path.join(root, "src/lib/supabase.ts"),
-    "export const supabase = null",
+    "import { createClient } from '@supabase/supabase-js'; export const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)",
+  );
+  fs.mkdirSync(path.join(root, "supabase/migrations"), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, "supabase/migrations/fixture.sql"),
+    "-- API-presence fixture only, not real auth proof: public.can_edit_workspace public.workspace_feature_access public.savings_cases public.workspace_members",
   );
   fs.writeFileSync(path.join(root, ".env.example"), "PRESERVE_THIS=\n");
   execFileSync("git", ["init", "-b", "main"], { cwd: root, stdio: "ignore" });
@@ -82,7 +87,7 @@ test("stale or tampered plans and unknown stacks refuse edits", async () => {
   assert.throws(() => applyPlan(root, p, p.approvalHash), /exact plan/);
   await assert.rejects(() => makePlan(root, { ...policy, credits: NaN }));
 });
-test("real AI call receives allowlisted metadata only; absent key is an error", async () => {
+test("AI request contract sends only allowlisted metadata; absent key is an error", async () => {
   const root = fixture();
   await assert.rejects(
     () => makePlan(root, policy, { ai: true, key: "" }),
@@ -115,4 +120,19 @@ test("real AI call receives allowlisted metadata only; absent key is an error", 
   assert.equal(p.ai.provider, "gemini");
   assert.ok(!JSON.stringify(sent).includes("fixture-secret"));
   assert.ok(!JSON.stringify(sent).includes("PRESERVE_THIS"));
+});
+test("unsupported auth and absent server permission contracts require clarification", async () => {
+  const root = fixture();
+  const auth = fs.readFileSync(path.join(root, "src/lib/supabase.ts"), "utf8");
+  fs.writeFileSync(
+    path.join(root, "src/lib/supabase.ts"),
+    "export const supabase = null",
+  );
+  await assert.rejects(() => makePlan(root, policy), /auth mapping/);
+  fs.writeFileSync(path.join(root, "src/lib/supabase.ts"), auth);
+  fs.writeFileSync(
+    path.join(root, "supabase/migrations/fixture.sql"),
+    "-- unsupported schema",
+  );
+  await assert.rejects(() => makePlan(root, policy), /permission contracts/);
 });
