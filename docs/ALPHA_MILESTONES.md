@@ -19,3 +19,8 @@ Status is tracked in GitHub milestones/issues and docs/ALPHA_TESTING.md. Runtime
 - A4 disposable-clone UI/build/tests delivered; policy approval, hosted backend and real authentication/provider flow pending.
 
 [Draft review PR8](https://github.com/circuitstudioai/meterkit/pull/8). No merge or production activation.
+
+
+## v4 reconciliation — 2026-10-23
+
+See [review](V4_CHECKLIST_REVIEW.md). The public chatbot Auth adapter, installer target and hosted runnable proof are additional A3/A4 deliverables. Provider credentials now pass hosted probes; do not keep the earlier masked-local-key diagnosis as a blocker. A2 still needs merchant configuration, approved policy and a real sandbox receipt. The dedicated alpha schema is applied; no duplicate project or seed is needed.

@@ -1,10 +1,26 @@
-# Current alpha execution — 2026-10-22
+# Current alpha execution — 2026-10-23
 
-The [approved PRD](docs/PRD.md) supersedes the historical wallet demo below. Four milestones/issues track execution: [A1](https://github.com/circuitstudioai/meterkit/issues/4), [A2](https://github.com/circuitstudioai/meterkit/issues/5), [A3](https://github.com/circuitstudioai/meterkit/issues/6), [A4](https://github.com/circuitstudioai/meterkit/issues/7).
+PR #8 remains draft and unmerged. A1 is accepted; A2–A4 still require live integration evidence. The last committed CI baseline passed 33 tests.
 
-New transactional Postgres kernel, verified sandbox adapter, authenticated job service and source-bound installer are under acceptance. See [evidence and gates](docs/ALPHA_TESTING.md). No production activation, live PayPal receipt or real AI plan has passed. Existing Gemini key returns API_KEY_INVALID. Command Center action/demo policy awaits confirmation.
+## Resumed work
+
+- Dedicated approved Micro project `meterkit-alpha` is healthy. Its five alpha tables are applied with no seed/funded wallets. Both Supabase API roles fail effective schema/table/function access checks. Transaction pooler TLS connection passed.
+- `DATABASE_URL` is stored as an encrypted, branch-specific Preview variable only. Production settings and Command Center production remain untouched.
+- Vercel-hosted checks: PayPal sandbox OAuth **PASS**, Gemini generation **PASS**. Earlier local key failures used masked downloaded values and do not diagnose the saved credentials.
+- Six legacy payment endpoints now return HTTP410 without initializing the legacy database or provider. The historical dashboard/examples are not yet migrated to the alpha engine.
+- Reviewed v4 in [V4_CHECKLIST_REVIEW.md](docs/V4_CHECKLIST_REVIEW.md). Public chatbot identity/installer/deployment, Venmo and the alpha-backed dashboard are additional implementation work, not delivered features.
+
+## Remaining gates
+
+- Owner confirmation: proposed $1 USD → 50 credits and 5 credits per action.
+- Sandbox `PAYPAL_MERCHANT_ID`, separate buyer approval and a publicly reachable alpha webhook.
+- Isolated Command Center Auth/Savings fixtures, live provider jobs and capture/signed-webhook receipt.
+- Real AI-assisted installer acceptance is separate from the tiny hosted Gemini provider check.
+- Do not mark ready until exact-head checks and both real flows pass. No merge, production activation, webhook deletion or Devpost submission.
 
 ## Historical demo status (not alpha acceptance)
+
+
 
 # MeterKit status
 
@@ -40,6 +56,6 @@ Infrastructure checkpoint: 2026-10-20. Hosting is online; sandbox payment accept
 - BLOCKED: sandbox buyer top-up, actual metered AI call, zero-balance rejection, verified webhook ledger update, and sandbox business payout.
 - NOT RUN: Gemini generation.
 
-Resume by authenticating Supabase and PayPal, checking that the database choice has no unapproved cost, applying `apps/dashboard/supabase/migrations/20261017000000_meterkit.sql`, setting the missing environment variables, and redeploying. Then complete every sandbox acceptance step. Do not reuse a customer database or run the destructive demo seed against an existing populated database.
+Historical instructions below are not the alpha setup path. Follow docs/SETUP.md and the canonical private alpha migration; do not apply legacy migrations or seed the alpha database.
 
 No app code changed, real-money operation performed, paid plan enabled, or Devpost submission made. No code defect requiring an issue was established during this infrastructure checkpoint.

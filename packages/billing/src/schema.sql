@@ -38,3 +38,19 @@ begin raise exception 'Journal entries are immutable'; end $$;
 drop trigger if exists immutable_entries on meterkit_alpha.entries;
 create trigger immutable_entries before update or delete on meterkit_alpha.entries for each row execute function meterkit_alpha.immutable_entry();
 revoke all on all tables in schema meterkit_alpha from public;
+
+-- Supabase API roles must never inherit access to the server-only ledger.
+revoke all on all functions in schema meterkit_alpha from public;
+revoke all on all sequences in schema meterkit_alpha from public;
+do $$
+declare api_role text;
+begin
+  foreach api_role in array array['anon', 'authenticated'] loop
+    if exists (select 1 from pg_roles where rolname=api_role) then
+      execute format('revoke all on schema meterkit_alpha from %I', api_role);
+      execute format('revoke all on all tables in schema meterkit_alpha from %I', api_role);
+      execute format('revoke all on all functions in schema meterkit_alpha from %I', api_role);
+      execute format('revoke all on all sequences in schema meterkit_alpha from %I', api_role);
+    end if;
+  end loop;
+end $$;

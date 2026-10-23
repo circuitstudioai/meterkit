@@ -12,7 +12,7 @@ Local developer alpha / controlled fixture integration is testable. **Not live P
 - Clean `npm ci`, Initial32 MeterKit tests (16 new billing/service, 3 installer, 13 existing), billing typecheck and all-workspace build passed locally. CI receipt remains separate.
 - Generated adapter applied **only to a disposable clone** of Command Center main `216b21c2c3d341d789d508c61ad6d232b3ad6f11`, using synthetic test policy. Its build and183 existing tests passed. Actual Command Center checkout remains unchanged.
 - Browser fixture:8/8 checks passed against generated UI + real local Postgres. Auth, PayPal and AI are simulated. See [results](alpha-evidence/browser-fixture-results.json), [desktop](alpha-evidence/desktop-fixture.png), [mobile](alpha-evidence/mobile-fixture.png). Mobile390px had no horizontal overflow; no browser page errors.
-- First real Gemini attempt returned HTTP400 / `API_KEY_INVALID`. Owner has replaced the key; revalidation is underway. No source or secret was logged.
+- Correction (2026-10-23): earlier local Gemini failures used masked Vercel-download values, not verified deployed credentials. They do not establish that the saved key is invalid. Hosted provider verification is required.
 
 ## Test the installer
 
@@ -33,5 +33,14 @@ Do not infer a live provider receipt from fixture logs, an HTTP200, a generated 
 - Initial kernel/integration commit46ffd63 passed [Postgres CI](https://github.com/circuitstudioai/meterkit/actions/runs/39829019393) and the [PR CI run](https://github.com/circuitstudioai/meterkit/actions/runs/39829095881): clean install,32 tests, strict billing types and all builds. A1 issue/milestone is closed; A2–A4 remain open.
 - A further installer guard now rejects unknown Supabase initialization or absent permission/module/schema contracts. Its new regression was observed failing, then all4 installer contracts passed. These are static ABI-presence checks, not a replacement for actual authenticated backend acceptance.
 - Preview `https://meterkit-p3zig240n-circuitstudioais-projects.vercel.app` built46ffd63. It is Vercel-protected. Authenticated CLI checked `/api/alpha/balance`: HTTP503 / `alpha_not_configured`, as intended. This is a disabled-backend boundary check, not a usable payment-tested alpha. PayPal cannot deliver through Vercel access protection; a publicly reachable isolated webhook endpoint remains a hosting gate.
-- Both freshly pulled Preview and Production Gemini settings still failed the real advisory request after the owner reported replacement. Await location clarification; do not overwrite or repeatedly test unknown credentials.
+- Local Preview/Production environment downloads are masked. Do not use those values to diagnose provider access; use the opt-in Vercel build-time checker, which logs pass/fail only.
 - [Author self-review](alpha-evidence/review.md) records standards/spec scope. No independent reviewer is claimed.
+
+
+## Resume receipt — 2026-10-23
+
+- Provider-only Vercel build: `https://meterkit-owp179rvi-circuitstudioais-projects.vercel.app` (protected Preview). Build logs report PayPal sandbox OAuth PASS and Gemini generation PASS. No capture or signed webhook was executed. This is not the public demo.
+- Dedicated Supabase `meterkit-alpha`: canonical schema applied, five alpha tables, zero funded wallets. `anon` and `authenticated` have no effective schema USAGE, wallet SELECT or immutable-entry EXECUTE access. Pooler connection with TLS passed. API exposed-schema settings remain a separate check.
+- A regression first demonstrated that explicit API-role grants survived migration; the amended migration now removes them. A separate route regression first returned400 from the legacy manual-credit endpoint; all six retired payment handlers now return410.
+- Branch-specific Preview `DATABASE_URL` saved encrypted. No production environment or production Command Center changes.
+- Real payment receipt remains pending: policy confirmation, merchant ID, public callback endpoint and sandbox buyer approval. No order/capture/event IDs are invented.

@@ -6,7 +6,7 @@ Product spec for contributing agents: [docs/PRD.md](docs/PRD.md). Stay inside wh
 
 Working name is **MeterKit**. Change it only in `packages/config/src/index.ts`.
 
-Hackathon deadline: **Nov 12, 2026, 12:00 PM PT**. Do not submit to Devpost. Sandbox only. Never commit secrets. Command Center is permitted only as an isolated first alpha integration. Do not merge unrelated Signal features, activate production billing, or change free-core behavior.
+Hackathon deadline: **Nov 12, 2026, 12:00 PM PT**. Do not submit to Devpost. Sandbox only. Never commit secrets. Command Center integration code is allowed; Circuit Signal's data collection method is never included. Use isolated test data only. Do not merge unrelated Signal features, activate production billing, or change free-core behavior.
 
 ## Commands
 
