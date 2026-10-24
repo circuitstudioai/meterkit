@@ -4,7 +4,9 @@ export class ConfirmedWorkFailure extends Error {}
 export type Identity = { scope: Scope; userId: string };
 export type ServiceOptions = {
   enabled: boolean;
-  origin: string;
+  origin: string | readonly string[];
+  /** Public user wallets are derived from verified identity, never browser-selected workspace IDs. */
+  scopeMode?: "workspace" | "authenticated-user";
   feature: string;
   credits: number;
   kernel: BillingKernel;
@@ -18,6 +20,18 @@ export type ServiceOptions = {
   generate: (input: unknown) => Promise<unknown>;
 };
 export function createHandler(o: ServiceOptions) {
+  const origins = new Set(typeof o.origin === "string" ? [o.origin] : o.origin);
+  if (
+    !origins.size ||
+    [...origins].some((origin) => {
+      try {
+        const url = new URL(origin);
+        return !["http:", "https:"].includes(url.protocol) || origin !== url.origin;
+      } catch {
+        return true;
+      }
+    })
+  ) throw new BillingError("invalid_origin_policy", 500);
   return async (request: Request): Promise<Response> => {
     const origin = request.headers.get("origin");
     const headers: Record<string, string> = {
@@ -27,7 +41,7 @@ export function createHandler(o: ServiceOptions) {
     };
     const reply = (data: unknown, status = 200) =>
       Response.json(data, { status, headers });
-    if (origin && origin !== o.origin)
+    if (origin && !origins.has(origin))
       return reply({ error: "origin_denied" }, 403);
     if (origin)
       Object.assign(headers, {
@@ -56,8 +70,12 @@ export function createHandler(o: ServiceOptions) {
           "",
       );
       const identity = await o.authenticate(request, workspaceId);
-      if (identity.scope.workspaceId !== workspaceId)
+      if (o.scopeMode === "authenticated-user") {
+        if (workspaceId || identity.scope.workspaceId !== identity.userId)
+          throw new BillingError("wallet_scope_denied", 403);
+      } else if (identity.scope.workspaceId !== workspaceId) {
         throw new BillingError("workspace_denied", 403);
+      }
       if (path === "/balance" && request.method === "GET")
         return reply(await o.kernel.balance(identity.scope));
       if (path === "/paypal/orders" && request.method === "POST")

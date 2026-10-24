@@ -1,3 +1,9 @@
+## Public identity preparation — 2026-10-24
+
+The v4 public-app Auth/wallet boundary is now prepared in code: verified server-side Supabase subject -> app-bound user wallet, explicit authenticated-user handler mode and per-handler exact origin lists. Existing Command Center workspace/membership/role/Savings checks remain the default.48 local workspace tests plus six retired-route checks, strict billing types, scoped lint and all builds pass. A real disposable-Postgres two-user/job replay contract uses fixture Auth/payment/model data; no hosted Auth or live payment acceptance is claimed. Details, limits and next wiring: [PUBLIC_IDENTITY.md](PUBLIC_IDENTITY.md).
+
+Public chatbot/UI/installer, live sandbox and isolated Command Center acceptance remain incomplete. PR8 stays draft; no policy, merchant, webhook, hosted configuration or Production activation in this slice. Earlier invalid-key/new-project blockers below are historical and superseded by the October23 provider/schema receipts.
+
 # v4 checklist review — 2026-10-23
 
 ## Recommendation

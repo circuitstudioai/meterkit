@@ -124,3 +124,30 @@ test("changed price requires review and spends nothing", async () => {
   assert.equal(runs, 0);
   assert.equal((await kernel.balance(scope)).available, 5);
 });
+test("public users and apps cannot spend one another's credits through the handler (Auth/provider fixtures, real Postgres)", async () => {
+  const { supabaseUserIdentity } = await import("./user-identity");
+  const first = "22222222-2222-4222-8222-222222222222";
+  const second = "33333333-3333-4333-8333-333333333333";
+  const ownerScope = { appId: "public-chat", workspaceId: first };
+  await kernel.createIntent(ownerScope, { id: "public-intent", packId: "fixture", credits: 5, amountMinor: 100, currency: "USD", merchantId: "fixture" });
+  await kernel.attachOrder("public-intent", "public-order");
+  await kernel.fulfill({ orderId: "public-order", captureId: "public-capture-fixture", status: "COMPLETED", amountMinor: 100, currency: "USD", merchantId: "fixture" });
+  const adapter = supabaseUserIdentity({ url: "https://fixture.supabase.co", anonKey: "fixture", appId: ownerScope.appId, fetcher: async (input, init) => {
+    assert.equal(String(input), "https://fixture.supabase.co/auth/v1/user");
+    const token = new Headers(init?.headers).get("authorization");
+    if (!["Bearer first", "Bearer second"].includes(token ?? "")) return new Response(null, { status: 401 });
+    return Response.json({ id: token === "Bearer first" ? first : second });
+  } });
+  const publicHandler = createHandler({ enabled: true, origin: ["https://chat.test"], scopeMode: "authenticated-user", feature: "fixture.chat", credits: 5, kernel,
+    paypal: {} as SandboxPayPal, authenticate: adapter.authenticate, prepare: async () => ({ fixture: true }), generate: async () => { runs++; return { fixture: "reply" }; } });
+  const balance = (token: string, override = "") => publicHandler(new Request(`https://api.test/api/alpha/balance${override}`, { headers: { Authorization: `Bearer ${token}`, Origin: "https://chat.test" } }));
+  assert.equal((await (await balance("first")).json()).available, 5);
+  assert.equal((await (await balance("second")).json()).available, 0);
+  assert.equal((await balance("second", `?workspaceId=${first}`)).status, 403);
+  assert.equal((await balance("invalid")).status, 401);
+  const job = (token: string) => publicHandler(new Request("https://api.test/api/alpha/jobs", { method: "POST", headers: { Authorization: `Bearer ${token}`, Origin: "https://chat.test", "Content-Type": "application/json" }, body: JSON.stringify({ key: "reply", recordId: "fixture", expectedCredits: 5, appId: "ignored-browser-app", userId: first }) }));
+  assert.equal((await job("second")).status, 402);assert.equal(runs, 0);
+  assert.equal((await job("first")).status, 200);assert.equal((await job("first")).status, 200);assert.equal(runs, 1);
+  assert.deepEqual(await kernel.balance({ appId: "another-app", workspaceId: first }), { available: 0, held: 0 });
+  assert.deepEqual(await kernel.balance({ appId: ownerScope.appId, workspaceId: second }), { available: 0, held: 0 });
+});
