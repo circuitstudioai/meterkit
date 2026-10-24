@@ -51,3 +51,7 @@ No access token, private key, customer data or sandbox account password belongs 
 ## Client groundwork checkpoint — October 24
 
 Added a memory-only Auth/balance/job transport with ten fixture-only contracts, included in normal example/CI tests. The page remains unavailable and API activation stays off; this is not real Auth or UI acceptance. Exact-key uncertain-work reconciliation is owner-bound within a client instance; reload-safe recovery must be addressed before wiring action controls. Details: [PUBLIC_CHAT_API.md](PUBLIC_CHAT_API.md#memory-only-client-groundwork--october-24). Merchant/webhook/buyer, installer/dashboard and Command Center acceptance remain pending.
+
+## Opt-in reload-recovery checkpoint — October 24
+
+The client now has an app-namespaced tab recovery adapter and canonical owner/issuer-bound exact-request journal. Seventeen fixture-only client tests and existing disabled/retired-route contracts pass; TypeScript/scoped lint pass. Storage must confirm the pending record before billable network; no persisted tokens or automatic replay. The unavailable page is still unchanged: configure recovery and explain private pending-prompt retention before any action UI. Actual browser reload/hosted Auth/payment acceptance remains unproven. See the latest [public API checkpoint](PUBLIC_CHAT_API.md#opt-in-tab-recovery-groundwork--october-24); all activation gates remain intact.

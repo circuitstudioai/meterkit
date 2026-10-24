@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createAlphaClient } from "./alpha-client";
+import { createAlphaClient, createTabRecoveryStore } from "./alpha-client";
 const userA = "11111111-1111-4111-8111-111111111111", userB = "22222222-2222-4222-8222-222222222222";
 const reply = (data: unknown, status = 200) => Response.json(data, { status });
 function setup(handler: (url: string, init: RequestInit) => Promise<Response> | Response) {
@@ -131,4 +131,109 @@ test("401 clears session but retains original work for owner reauthentication", 
   await assert.rejects(client.balance(), /sign_in_required/);
   await client.signIn("a", "b");
   assert.equal(client.pendingJob()?.key, "id-1");
+});
+
+function recoveryHarness() {
+  let raw: string | null = null, fail = false;
+  let user = userA, answer: "unknown" | "completed" | "released" = "unknown";
+  const jobs: string[] = [];
+  const recovery = { read: () => { if (fail) throw new Error("disk"); return raw; },
+    write: (value: string) => { if (fail) throw new Error("disk"); raw = value; } };
+  function make() {
+    let id = 0;
+    return createAlphaClient({ issuer: "https://auth.example", anonKey: "public", recovery,
+      randomId: () => `33333333-3333-4333-8333-${String(++id).padStart(12, "0")}`,
+      fetcher: (async (url, init) => {
+        if (String(url).includes("/auth/")) return login(user);
+        assert.equal(raw, JSON.stringify({ version: 1, issuer: "https://auth.example",
+          pending: { owner: user, job: JSON.parse(String(init?.body)) } }));
+        jobs.push(String(init?.body));
+        if (answer === "unknown") throw new Error("connection lost after commit");
+        return answer === "completed" ? reply({ status: "completed", result: { text: "recovered" } }) :
+          reply({ status: "released" }, 502);
+      }) as typeof fetch });
+  }
+  return { make, jobs, recovery, raw: () => raw, setRaw: (value: string) => { raw = value; },
+    fail: (value: boolean) => { fail = value; }, user: (value: string) => { user = value; },
+    answer: (value: typeof answer) => { answer = value; } };
+}
+test("reload restores exact owner-bound unknown work, never token/session or automatic network", async () => {
+  const h = recoveryHarness(), first = h.make();
+  await first.signIn("a", "fixture-password");
+  await assert.rejects(first.send("private prompt"), /job_needs_reconciliation/);
+  const original = h.raw();
+  assert.ok(original?.includes("private prompt"));
+  for (const secret of ["fixture.token", "fixture-password", "never-retained"]) assert.ok(!original?.includes(secret));
+  const reloaded = h.make();
+  assert.equal(h.jobs.length, 1); assert.equal(reloaded.pendingJob(), undefined);
+  await assert.rejects(reloaded.reconcile(), /sign_in_required/);
+  await reloaded.signIn("a", "b");
+  assert.ok(Object.isFrozen(reloaded.pendingJob()));
+  await assert.rejects(reloaded.send("different"), /pending_job_exists/);
+  h.answer("completed");
+  assert.deepEqual(await reloaded.reconcile(), { status: "completed", text: "recovered" });
+  assert.equal(h.jobs[0], h.jobs[1]);
+  assert.equal(JSON.parse(h.raw()!).pending, null);
+  const finished = h.make(); await finished.signIn("a", "b");
+  assert.equal(finished.pendingJob(), undefined);
+});
+test("restored work stays hidden and cannot be replayed/replaced by a different account", async () => {
+  const h = recoveryHarness(), first = h.make(); await first.signIn("a", "b");
+  await assert.rejects(first.send("private"));
+  h.user(userB); const other = h.make(); await other.signIn("c", "d");
+  assert.equal(other.pendingJob(), undefined);
+  await assert.rejects(other.reconcile(), /pending_owner_required/);
+  await assert.rejects(other.send("new"), /pending_job_exists/);
+  assert.equal(h.jobs.length, 1);
+});
+test("unwritable recovery blocks network; retry after storage recovery uses original key", async () => {
+  const h = recoveryHarness(), client = h.make(); await client.signIn("a", "b");
+  h.fail(true); await assert.rejects(client.send("private"), /recovery_unavailable/);
+  assert.equal(h.jobs.length, 0); const job = client.pendingJob();
+  h.fail(false); h.answer("released");
+  assert.deepEqual(await client.reconcile(), { status: "released" });
+  assert.deepEqual(JSON.parse(h.jobs[0]), job); assert.equal(JSON.parse(h.raw()!).pending, null);
+});
+test("malformed, foreign-issuer, oversized or extra-field journals fail closed rather than discard unknown work", async () => {
+  const h = recoveryHarness(), client = h.make(); await client.signIn("a", "b");
+  await assert.rejects(client.send("private")); const valid = h.raw()!;
+  for (const raw of ["bad", "null", "x".repeat(32769), valid.replace("auth.example", "foreign.example"),
+    valid.replace('"expectedCredits":5', '"expectedCredits":1'),
+    valid.replace('"prompt":"private"', '"prompt":"private","access_token":"secret"'),
+    valid.replace(userA, "not-a-user"), valid.replace('"version":1', '"version":2')]) {
+    h.setRaw(raw); assert.throws(h.make, /recovery_unavailable/); assert.equal(h.jobs.length, 1);
+  }
+  h.setRaw(valid); h.fail(true); assert.throws(h.make, /recovery_unavailable/);
+});
+test("unconfirmed durable clear keeps pending work and exact reconciliation after a completed reply", async () => {
+  let raw: string | null = null, writes = 0, calls = 0;
+  const client = createAlphaClient({ issuer: "https://auth.example", anonKey: "public",
+    recovery: { read: () => raw, write: value => { if (++writes === 2) throw new Error("disk"); raw = value; } },
+    fetcher: (async url => String(url).includes("/auth/") ? login() :
+      (++calls, reply({ status: "completed", result: { text: "settled" } }))) as typeof fetch });
+  await client.signIn("a", "b"); await assert.rejects(client.send("hello"), /recovery_unavailable/);
+  const key = client.pendingJob()?.key; assert.ok(key); assert.equal(JSON.parse(raw!).pending.job.key, key);
+  assert.deepEqual(await client.reconcile(), { status: "completed", text: "settled" });
+  assert.equal(calls, 2); assert.equal(client.pendingJob(), undefined);
+});
+test("silent write loss is detected before execution; invalid recovery IDs never reach network", async () => {
+  let calls = 0;
+  for (const randomId of [() => "invalid", () => crypto.randomUUID()]) {
+    const client = createAlphaClient({ issuer: "https://auth.example", anonKey: "public", randomId,
+      recovery: { read: () => null, write: () => {} }, fetcher: (async () => { calls++; return login(); }) as typeof fetch });
+    await client.signIn("a", "b"); await assert.rejects(client.send("hello"), /invalid_job_id|recovery_unavailable/);
+  }
+  assert.equal(calls, 2);
+});
+
+test("tab adapter namespaces apps and recreates the same journal without deleting pending input", () => {
+  const entries = new Map<string, string>();
+  const storage = { getItem: (key: string) => entries.get(key) ?? null,
+    setItem: (key: string, value: string) => { entries.set(key, value); } };
+  const first = createTabRecoveryStore(storage, "public-chat"); first.write("exact pending record");
+  assert.equal(createTabRecoveryStore(storage, "public-chat").read(), "exact pending record");
+  assert.equal(createTabRecoveryStore(storage, "other-app").read(), null);
+  assert.deepEqual([...entries.keys()], ["meterkit:pending-job:v1:public-chat"]);
+  for (const scope of ["", "../other", "x".repeat(129)])
+    assert.throws(() => createTabRecoveryStore(storage, scope), /invalid_recovery_scope/);
 });

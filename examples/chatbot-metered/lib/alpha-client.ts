@@ -1,5 +1,6 @@
 /** Browser transport only. Server verification, scope and prices remain authoritative.
- * No cookies/localStorage/sessionStorage, refresh tokens, checkout or automatic retries.
+ * No token persistence, refresh tokens, checkout or automatic retries.
+ * Optional tab-scoped recovery stores private pending input, never credentials.
  */
 export class ChatClientError extends Error {
   constructor(public readonly code: string) { super(code); }
@@ -7,7 +8,18 @@ export class ChatClientError extends Error {
 type Session = { token: string; userId: string; expiresAt: number };
 export type ChatJob = Readonly<{ key: string; recordId: string; prompt: string; expectedCredits: 5 }>;
 export type JobOutcome = { status: "completed"; text: string } | { status: "reserved" } | { status: "released" };
-export type ClientConfig = { issuer: string; anonKey: string; fetcher?: typeof fetch; now?: () => number; randomId?: () => string };
+export type RecoveryStore = { read(): string | null; write(value: string): void };
+/** Use only window.sessionStorage after explaining pending-prompt retention to the user.
+ * App ID namespaces independent deployments; never pass localStorage or store credentials.
+ * This is reload recovery, not an authorization boundary against same-origin JavaScript.
+ */
+export function createTabRecoveryStore(storage: Pick<Storage, "getItem" | "setItem">, appId: string): RecoveryStore {
+  if (!/^[a-zA-Z0-9_-]{1,128}$/.test(appId)) throw new ChatClientError("invalid_recovery_scope");
+  const key = `meterkit:pending-job:v1:${appId}`;
+  return { read: () => storage.getItem(key), write: value => storage.setItem(key, value) };
+}
+type Pending = { owner: string; job: ChatJob };
+export type ClientConfig = { issuer: string; anonKey: string; fetcher?: typeof fetch; now?: () => number; randomId?: () => string; recovery?: RecoveryStore };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const tokenPattern = /^[A-Za-z0-9._~-]{1,8192}$/;
 
@@ -45,7 +57,38 @@ export function createAlphaClient(config: ClientConfig) {
   let session: Session | undefined;
   let epoch = 0, busy = false;
   // Retain unknown work across local sign-out; only its original user may reconcile it.
-  let pending: { owner: string; job: ChatJob } | undefined;
+  let pending: Pending | undefined;
+  const encode = (value: Pending | undefined) => JSON.stringify({ version: 1, issuer: issuer.origin, pending: value ?? null });
+  function persist(value: Pending | undefined) {
+    if (!config.recovery) return;
+    try {
+      const encoded = encode(value);
+      config.recovery.write(encoded);
+      if (config.recovery.read() !== encoded) throw new Error();
+    } catch { throw new ChatClientError("recovery_unavailable"); }
+  }
+  if (config.recovery) {
+    try {
+      const raw = config.recovery.read();
+      if (raw !== null) {
+        if (raw.length > 32768) throw new Error();
+        const data = JSON.parse(raw);
+        if (data.version !== 1 || data.issuer !== issuer.origin || !("pending" in data)) throw new Error();
+        if (data.pending !== null) {
+          const value = data.pending, job = value.job;
+          if (typeof value.owner !== "string" || !uuid.test(value.owner) || !job ||
+              typeof job.key !== "string" || !uuid.test(job.key) ||
+              typeof job.recordId !== "string" || !uuid.test(job.recordId) ||
+              typeof job.prompt !== "string" || !job.prompt.trim() || job.prompt !== job.prompt.trim() ||
+              job.prompt.length > 4000 || job.expectedCredits !== 5) throw new Error();
+          pending = { owner: value.owner, job: Object.freeze({ key: job.key, recordId: job.recordId,
+            prompt: job.prompt, expectedCredits: 5 }) };
+          // Reject extra fields, noncanonical records and accidental credential contamination.
+          if (encode(pending) !== raw) throw new Error();
+        } else if (encode(undefined) !== raw) throw new Error();
+      }
+    } catch { throw new ChatClientError("recovery_unavailable"); }
+  }
   const current = () => {
     if (!session || session.expiresAt <= now()) {
       session = undefined;
@@ -71,22 +114,26 @@ export function createAlphaClient(config: ClientConfig) {
     if (busy) throw new ChatClientError("request_in_progress");
     busy = true;
     try {
+      // Reload recovery must be confirmed before any billable network attempt.
+      persist(pending);
       const { response, data } = await request("/jobs", pending.job);
       if (response.status === 202 && data.status === "reserved") return { status: "reserved" };
       if ((response.status === 409 || response.status === 502) && data.status === "released") {
+        persist(undefined);
         pending = undefined;
         return { status: "released" };
       }
       const result = data.result as { text?: unknown } | undefined;
       if (response.ok && data.status === "completed" && typeof result?.text === "string" &&
           result.text.trim() && result.text.length <= 8000) {
+        persist(undefined);
         pending = undefined;
         return { status: "completed", text: result.text };
       }
       // Even an HTTP failure could follow a committed reserve/settlement. Never start a new key.
       throw new ChatClientError("job_needs_reconciliation");
     } catch (error) {
-      if (error instanceof ChatClientError && ["session_changed", "sign_in_required"].includes(error.code)) throw error;
+      if (error instanceof ChatClientError && ["session_changed", "sign_in_required", "recovery_unavailable"].includes(error.code)) throw error;
       throw new ChatClientError("job_needs_reconciliation");
     } finally { busy = false; }
   }
@@ -135,6 +182,8 @@ export function createAlphaClient(config: ClientConfig) {
       if (pending) throw new ChatClientError("pending_job_exists");
       if (typeof prompt !== "string" || !prompt.trim() || prompt.length > 4000) throw new ChatClientError("invalid_prompt");
       const job = Object.freeze({ key: randomId(), recordId: randomId(), prompt: prompt.trim(), expectedCredits: 5 as const });
+      if (config.recovery && (!uuid.test(job.key) || !uuid.test(job.recordId)))
+        throw new ChatClientError("invalid_job_id");
       pending = { owner: auth.userId, job };
       return execute();
     },
