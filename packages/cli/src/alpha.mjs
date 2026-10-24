@@ -8,7 +8,11 @@ const templates = fileURLToPath(
 );
 const hash = (value) =>
   createHash("sha256")
-    .update(typeof value === "string" ? value : JSON.stringify(value))
+    .update(
+      typeof value === "string" || Buffer.isBuffer(value)
+        ? value
+        : JSON.stringify(value),
+    )
     .digest("hex");
 const git = (root, ...args) =>
   execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
@@ -56,11 +60,11 @@ function policy(input) {
     })),
   };
 }
-function safeRead(root, relative) {
+function safeRead(root, relative, encoding = "utf8") {
   const target = path.join(root, relative);
   if (fs.realpathSync(target) !== target)
     throw new Error(`Symlinked source is unsupported: ${relative}`);
-  return fs.readFileSync(target, "utf8");
+  return fs.readFileSync(target, encoding);
 }
 function snapshot(root) {
   const files = execFileSync(
@@ -80,7 +84,7 @@ function snapshot(root) {
     files.map((file) => [
       file,
       fs.existsSync(path.join(root, file))
-        ? hash(safeRead(root, file))
+        ? hash(safeRead(root, file, null))
         : "deleted",
     ]),
   );

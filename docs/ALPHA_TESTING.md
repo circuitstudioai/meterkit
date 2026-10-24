@@ -44,3 +44,15 @@ Do not infer a live provider receipt from fixture logs, an HTTP200, a generated 
 - A regression first demonstrated that explicit API-role grants survived migration; the amended migration now removes them. A separate route regression first returned400 from the legacy manual-credit endpoint; all six retired payment handlers now return410.
 - Branch-specific Preview `DATABASE_URL` saved encrypted. No production environment or production Command Center changes.
 - Real payment receipt remains pending: policy confirmation, merchant ID, public callback endpoint and sandbox buyer approval. No order/capture/event IDs are invented.
+
+## Installer source binding — 2026-10-24
+
+The installer hashes tracked and non-ignored source files as raw bytes, including
+binary assets; it still excludes `.meterkit/` and environment-file paths. Older
+plans used UTF-8 decoding for source fingerprints and must be regenerated and
+reviewed before apply. Output templates and policy remain independently checked.
+
+Regression: changing a committed binary asset from byte `80` to `81` previously
+preserved the decoded fingerprint and allowed the stale plan on a clean target.
+The installer now rejects that apply before creating a branch or writing files.
+This is local installer evidence only, not a live model or payment receipt.

@@ -136,3 +136,37 @@ test("unsupported auth and absent server permission contracts require clarificat
   );
   await assert.rejects(() => makePlan(root, policy), /permission contracts/);
 });
+
+// Different invalid UTF-8 bytes decode identically. A source-bound installer
+// must still reject a committed asset change after the plan was reviewed.
+test("binary asset changes invalidate a reviewed plan even in a clean target", async () => {
+  const root = fixture();
+  try {
+    const asset = path.join(root, "src/asset.bin");
+    fs.writeFileSync(asset, Buffer.from([0x80]));
+    const commit = () => {
+      execFileSync("git", ["add", "."], { cwd: root });
+      execFileSync(
+        "git",
+        ["-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", "commit", "-m", "asset"],
+        { cwd: root, stdio: "ignore" },
+      );
+    };
+    commit();
+    const plan = await makePlan(root, policy);
+    fs.writeFileSync(asset, Buffer.from([0x81]));
+    commit();
+    assert.throws(() => applyPlan(root, plan, plan.approvalHash), /Source changed/);
+    assert.equal(
+      execFileSync("git", ["branch", "--show-current"], { cwd: root, encoding: "utf8" }).trim(),
+      "main",
+    );
+    assert.equal(
+      execFileSync("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" }),
+      "",
+    );
+    assert.ok(!fs.existsSync(path.join(root, "src/meterkit-alpha")));
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
