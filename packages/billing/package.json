@@ -1,0 +1,19 @@
+{
+  "name": "@meterkit/billing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "tsx --test --test-concurrency=1 src/*.test.ts",
+    "typecheck": "tsc --noEmit --strict --target ES2022 --module esnext --moduleResolution bundler --skipLibCheck src/index.ts src/paypal.ts src/service.ts src/supabase.ts src/gemini.ts"
+  },
+  "dependencies": {
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "@types/node": "^20"
+  }
+}
