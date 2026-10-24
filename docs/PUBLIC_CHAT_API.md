@@ -26,7 +26,13 @@ Separate server-only variables: `METERKIT_CHAT_ENABLED`, `METERKIT_CHAT_SANDBOX_
 
 No hosted environment, database schema, webhook, credentials or deployment settings were changed. Merchant ID, public callback setup and separate buyer approval remain prerequisites for real payment acceptance. Do not activate merely to obtain a demo URL.
 
-**The existing metered example homepage, `/api/chat`, `/api/export` and SDK wallet are historical and are not connected to this API.** Do not publicly deploy that historical surface as the authenticated alpha. The next slice must replace/retire those paths and wire real Auth session handling and an alpha-backed balance/job UI before public-target acceptance. Installer/dashboard integration is also pending. No login UI, signup/session lifecycle, checkout return flow, public endpoint, new deployment or judge-ready demo is claimed.
+## Historical metered surface retired — 2026-10-24
+
+The metered example's `/api/chat` and `/api/export` now return410 with `Cache-Control: no-store` for all seven supported HTTP verbs. They do not parse input, initialize the historical SDK wallet or call a model/provider. The fixed `user_alex` wallet provider, legacy top-up/chat/export UI, demo model fallback and SDK adapter have been removed from this example. The homepage is an honest unavailable-state page, not a functional alpha chatbot. The separate unmetered **before** example and shared SDK remain unchanged.
+
+Targeted route contracts cover forged user input and malformed bodies with a fetch trap. A compiled local Next server passed14 HTTP method/path checks, returned the unavailable homepage without the legacy user/wallet configuration and kept unconfigured `/api/alpha/balance` at503. The metered example production build/TypeScript and scoped lint pass (the root pages-directory notice is pre-existing). The initial root lint invocation lacked a config; rerunning with the existing dashboard config passed. No full workspace regression rerun or live Auth/payment acceptance is claimed for this retirement-only change.
+
+**Remaining:** wire real Auth session handling and an alpha-backed balance/job UI before public-target acceptance. Installer/dashboard integration is also pending. No login UI, signup/session lifecycle, checkout return flow, new public deployment or judge-ready demo is claimed. Do not activate the API merely because legacy routes are now retired.
 
 ## Executed evidence
 

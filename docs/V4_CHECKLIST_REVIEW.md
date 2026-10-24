@@ -1,3 +1,7 @@
+## Metered example retirement checkpoint — October 24
+
+The historical metered chat/export endpoints now fail closed with410, and the fixed-user SDK wallet/top-up UI has been replaced by an unavailable-state page. The demo model/SDK adapter is removed from this example; the unmetered before-example is unchanged. Targeted direct/compiled HTTP checks, metered example build/TypeScript and scoped lint pass. Real Auth/session and alpha-backed UI remain pending; this is not public chatbot or payment acceptance. See [PUBLIC_CHAT_API.md](PUBLIC_CHAT_API.md).
+
 ## Latest public API checkpoint — October 24
 
 The public chatbot server composition is now prepared but disabled by default. See [PUBLIC_CHAT_API.md](PUBLIC_CHAT_API.md) for endpoints, evidence, activation gates and remaining UI/legacy-route work. PM7140 approved **sandbox-only USD1.00 / 50credits / 5credits per AI action**; earlier pending-policy text below is historical. Merchant/webhook/buyer and Production gates remain. No hosted settings or live acceptance changed.
