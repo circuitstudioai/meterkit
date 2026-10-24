@@ -1,3 +1,7 @@
+## Latest public API checkpoint — October 24
+
+The public chatbot server composition is now prepared but disabled by default. See [PUBLIC_CHAT_API.md](PUBLIC_CHAT_API.md) for endpoints, evidence, activation gates and remaining UI/legacy-route work. PM7140 approved **sandbox-only USD1.00 / 50credits / 5credits per AI action**; earlier pending-policy text below is historical. Merchant/webhook/buyer and Production gates remain. No hosted settings or live acceptance changed.
+
 ## Public identity preparation — 2026-10-24
 
 The v4 public-app Auth/wallet boundary is now prepared in code: verified server-side Supabase subject -> app-bound user wallet, explicit authenticated-user handler mode and per-handler exact origin lists. Existing Command Center workspace/membership/role/Savings checks remain the default.48 local workspace tests plus six retired-route checks, strict billing types, scoped lint and all builds pass. A real disposable-Postgres two-user/job replay contract uses fixture Auth/payment/model data; no hosted Auth or live payment acceptance is claimed. Details, limits and next wiring: [PUBLIC_IDENTITY.md](PUBLIC_IDENTITY.md).

@@ -16,6 +16,7 @@ export type ServiceOptions = {
     identity: Identity,
     recordId: string,
     request: Request,
+    data: Readonly<Record<string, unknown>>,
   ) => Promise<unknown>;
   generate: (input: unknown) => Promise<unknown>;
 };
@@ -98,7 +99,7 @@ export function createHandler(o: ServiceOptions) {
       const recordId = String(data.recordId ?? "");
       if (!key || !recordId || recordId.length > 200)
         throw new BillingError("invalid_job", 400);
-      const input = await o.prepare(identity, recordId, request);
+      const input = await o.prepare(identity, recordId, request, data);
       const job = await o.kernel.reserve(identity.scope, {
         key,
         feature: o.feature,

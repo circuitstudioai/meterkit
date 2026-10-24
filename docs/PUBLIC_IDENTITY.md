@@ -1,3 +1,7 @@
+## Latest public API checkpoint — October 24
+
+The public chatbot server composition is now prepared but disabled by default. See [PUBLIC_CHAT_API.md](PUBLIC_CHAT_API.md) for endpoints, evidence, activation gates and remaining UI/legacy-route work. PM7140 approved **sandbox-only USD1.00 / 50credits / 5credits per AI action**; earlier pending-policy text below is historical. Merchant/webhook/buyer and Production gates remain. No hosted settings or live acceptance changed.
+
 # Public-app identity foundation — October 24
 
 This is code preparation under the v4 review, not a deployed public chatbot, completed installer, live Auth receipt or payment acceptance. The existing Command Center alpha route remains disabled by default and uses its original workspace/membership/edit-role/Savings checks. No hosted identity, policy, credential, merchant, webhook or Production setting changes are included.

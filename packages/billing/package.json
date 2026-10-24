@@ -6,7 +6,7 @@
   "exports": "./src/index.ts",
   "scripts": {
     "test": "tsx --test --test-concurrency=1 src/*.test.ts",
-    "typecheck": "tsc --noEmit --strict --target ES2022 --module esnext --moduleResolution bundler --skipLibCheck src/index.ts src/paypal.ts src/service.ts src/supabase.ts src/gemini.ts src/user-identity.ts"
+    "typecheck": "tsc --noEmit --strict --target ES2022 --module esnext --moduleResolution bundler --skipLibCheck src/index.ts src/paypal.ts src/service.ts src/supabase.ts src/gemini.ts src/user-identity.ts src/public-chat.ts"
   },
   "dependencies": {
     "postgres": "^3.4.9"
