@@ -47,3 +47,7 @@ This review is separate from completion of the new public-chatbot implementation
 [Official rules](https://paypalaihackathon.devpost.com/rules), checked 2026-10-23: PayPal plus AI is required, the public repository must contain the necessary source/assets/instructions, and the demo must actually work. Public hosting is optional when complete setup/run instructions are supplied. A hosted public chatbot remains a useful deliberate delivery choice, not an additional rules requirement. The judges may score the supplied presentation without trying the demo.
 
 No access token, private key, customer data or sandbox account password belongs in this document. Provide test access through controlled instructions, not publicly committed credentials.
+
+## Client groundwork checkpoint — October 24
+
+Added a memory-only Auth/balance/job transport with ten fixture-only contracts, included in normal example/CI tests. The page remains unavailable and API activation stays off; this is not real Auth or UI acceptance. Exact-key uncertain-work reconciliation is owner-bound within a client instance; reload-safe recovery must be addressed before wiring action controls. Details: [PUBLIC_CHAT_API.md](PUBLIC_CHAT_API.md#memory-only-client-groundwork--october-24). Merchant/webhook/buyer, installer/dashboard and Command Center acceptance remain pending.
