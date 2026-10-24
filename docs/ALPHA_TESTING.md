@@ -56,3 +56,7 @@ Regression: changing a committed binary asset from byte `80` to `81` previously
 preserved the decoded fingerprint and allowed the stale plan on a clean target.
 The installer now rejects that apply before creating a branch or writing files.
 This is local installer evidence only, not a live model or payment receipt.
+
+### Installer output containment
+
+Apply refuses pre-existing generated output paths, including ignored dangling symlinks, before creating its install branch. A dangling link must never let a generated write create a file outside the reviewed repository. This complements source byte binding and symlinked-parent rejection; it is not real payment or target-build acceptance.

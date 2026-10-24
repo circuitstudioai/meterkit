@@ -170,3 +170,30 @@ test("binary asset changes invalidate a reviewed plan even in a clean target", a
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+// Ignored dangling links do not appear in git status or existsSync, but a write
+// would follow them and create a file outside the reviewed target.
+test("ignored dangling output symlink cannot escape the target", async () => {
+  const root = fixture();
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), "meterkit-outside-"));
+  try {
+    fs.appendFileSync(path.join(root, ".git/info/exclude"), "\nsrc/meterkit-alpha/\n");
+    fs.mkdirSync(path.join(root, "src/meterkit-alpha"));
+    const escaped = path.join(outside, "not-approved.tsx");
+    fs.symlinkSync(escaped, path.join(root, "src/meterkit-alpha/MeterKitAlpha.tsx"));
+    const plan = await makePlan(root, policy);
+    assert.throws(() => applyPlan(root, plan, plan.approvalHash), /Refusing overwrite/);
+    assert.ok(!fs.existsSync(escaped));
+    assert.equal(
+      execFileSync("git", ["branch", "--show-current"], { cwd: root, encoding: "utf8" }).trim(),
+      "main",
+    );
+    assert.equal(
+      execFileSync("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" }),
+      "",
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(outside, { recursive: true, force: true });
+  }
+});

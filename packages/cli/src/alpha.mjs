@@ -290,7 +290,9 @@ export function applyPlan(root, plan, approvalHash) {
     );
   for (const file of files) {
     const target = path.join(root, file.path);
-    if (file.before === null && fs.existsSync(target))
+    // lstat also sees dangling symlinks: existsSync would follow them and
+    // report false, allowing writeFileSync to create an unreviewed outside file.
+    if (file.before === null && fs.lstatSync(target, { throwIfNoEntry: false }))
       throw new Error(`Refusing overwrite: ${file.path}`);
     let parent = path.dirname(target);
     while (parent !== root) {
