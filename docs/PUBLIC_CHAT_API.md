@@ -1,3 +1,7 @@
+## Read-only wallet dashboard — October 25
+
+The dashboard app has an independently gated public-user alpha-wallet view, not the historical console ledger or a payment UI. See [ALPHA_WALLET_DASHBOARD.md](ALPHA_WALLET_DASHBOARD.md). It remains disabled; hosted Auth/payment acceptance is not inferred from local tests.
+
 # Public chatbot API preparation — 2026-10-24
 
 Status: code-only, disabled by default, PR8 remains draft. This is not a hosted Auth/payment receipt or a finished public chatbot.

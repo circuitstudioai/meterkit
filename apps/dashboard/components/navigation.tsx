@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 
 const items = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
+  { href: "/wallet", label: "Alpha wallet (read-only)", icon: Users },
+  { href: "/", label: "Legacy overview", icon: LayoutDashboard },
   { href: "/apps", label: "Apps", icon: AppWindow },
   { href: "/features", label: "Features & prices", icon: Tags },
   { href: "/balances", label: "Balances", icon: Users },

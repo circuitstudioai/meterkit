@@ -1,3 +1,7 @@
+## Read-only alpha wallet checkpoint — October 25
+
+Prepared an independently gated public-user `/wallet` dashboard backed by server-verified identity and the alpha kernel. No payments, mutations, workspace/admin reads or hosted activation. Full local regression, real-Postgres isolation/read-only contract and six browser fixture checks pass. Historical console pages are explicitly labeled legacy. Full builder/admin views and hosted acceptance remain pending. See [dashboard scope/evidence](ALPHA_WALLET_DASHBOARD.md).
+
 ## Metered example retirement checkpoint — October 24
 
 The historical metered chat/export endpoints now fail closed with410, and the fixed-user SDK wallet/top-up UI has been replaced by an unavailable-state page. The demo model/SDK adapter is removed from this example; the unmetered before-example is unchanged. Targeted direct/compiled HTTP checks, metered example build/TypeScript and scoped lint pass. Real Auth/session and alpha-backed UI remain pending; this is not public chatbot or payment acceptance. See [PUBLIC_CHAT_API.md](PUBLIC_CHAT_API.md).

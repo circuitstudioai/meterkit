@@ -388,3 +388,14 @@ p {
     scroll-behavior: auto !important;
   }
 }
+
+/* Read-only alpha wallet. No legacy credit/payment controls. */
+.meter-wallet { max-width: 640px; padding: 24px 0; }
+.meter-wallet p { margin-block: 12px; line-height: 1.6; }
+.meter-wallet-form { display: grid; gap: 16px; max-width: 400px; margin-block: 20px; }
+.meter-wallet-form label { display: grid; gap: 6px; }
+.meter-wallet input { border: 1px solid #81958b; border-radius: 4px; padding: 10px; min-width: 0; width: 100%; background: white; }
+.meter-wallet button { border: 1px solid #193c39; border-radius: 4px; padding: 10px 16px; margin: 4px 12px 4px 0; background: #193c39; color: white; }
+.meter-wallet button:disabled { opacity: .6; }
+.meter-wallet dl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 16px; background: white; }
+.meter-wallet dd { font-weight: 650; }
