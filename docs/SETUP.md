@@ -27,7 +27,9 @@ node packages/cli/bin/meterkit.mjs apply /path/to/command-center --plan=/tmp/pla
 
 `--ai` performs a real Gemini advisory review of allowlisted stack metadata, policy, paths and acceptance requirements. It never sends repository source or env files. Missing/invalid credentials fail explicitly. The deterministic adapter owns edits; AI output cannot rewrite tests or prices.
 
-Only the inspected Command Center entry point is supported initially. Unknown entry points/auth mappings require clarification. The generated route is disabled until `VITE_METERKIT_ALPHA_ENABLED=true`; set `VITE_METERKIT_ALPHA_API_URL` to the isolated backend origin. Existing Supabase session is reused.
+The additional exact standalone Next public-chat reference now has a separate `chat.reply` adapter; see [public reference installer](PUBLIC_CHAT_INSTALLER.md). Custom Next applications are not supported.
+
+For `savings.explanation`, only the inspected Command Center entry point is supported. Unknown entry points/auth mappings require clarification. The generated route is disabled until `VITE_METERKIT_ALPHA_ENABLED=true`; set `VITE_METERKIT_ALPHA_API_URL` to the isolated backend origin. Existing Supabase session is reused.
 
 ## Isolated backend
 

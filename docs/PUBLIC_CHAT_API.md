@@ -79,3 +79,8 @@ Executed checks:
 - Initial browser run stopped on a test selector matching both the app alert and Next's route announcer. The test now selects the app alert; all11 checks pass. This was a harness assertion problem, not a hosted-provider failure.
 
 These are actual browser lifecycle checks with **HTTP fixture Auth, balances and jobs**, not hosted Supabase Auth, real Postgres/job/payment/model acceptance. No API/hosting switch, merchant, webhook, buyer approval, Production billing or paid infrastructure was activated. Public deployment/two-user hosted acceptance, installer/dashboard integration and merchant/webhook/buyer receipts remain outstanding.
+
+
+## Standalone reference installer — October 25
+
+The exact before-example now has an additional deterministic, source/plan-bound installer adapter. The generated standalone app compiles and refuses unconfigured activation; both legacy routes remain retired. See [supported target, commands and local evidence](PUBLIC_CHAT_INSTALLER.md). This supersedes the blanket installer-not-implemented notes above, not the outstanding custom-stack, hosted Auth/payment/model, dashboard or live sandbox acceptance gates.

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { publicChatAdapter, publicChatOutputs } from "./public-chat-target.mjs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
@@ -21,7 +22,7 @@ function policy(input) {
     !input ||
     input.version !== 1 ||
     input.mode !== "sandbox" ||
-    input.feature !== "savings.explanation" ||
+    !["savings.explanation", "chat.reply"].includes(input.feature) ||
     !Number.isSafeInteger(input.credits) ||
     input.credits <= 0 ||
     input.credits > 1_000_000 ||
@@ -30,7 +31,7 @@ function policy(input) {
     input.packs.length > 10
   )
     throw new Error(
-      "Specify version=1, sandbox, savings.explanation, positive integer credits and explicit demo packs.",
+      "Specify version=1, sandbox, savings.explanation or chat.reply, positive integer credits and explicit demo packs.",
     );
   for (const p of input.packs)
     if (
@@ -90,6 +91,7 @@ function snapshot(root) {
   );
 }
 function outputs(root, p) {
+  if (p.feature === "chat.reply") return publicChatOutputs(root, p, safeRead);
   const main = safeRead(root, "src/main.tsx");
   if (
     !/^import VisibilityApp from ['"]\.\/VisibilityApp['"]/m.test(main) ||
@@ -146,56 +148,58 @@ export async function makePlan(
   const p = policy(input);
   const pkg = JSON.parse(safeRead(root, "package.json"));
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-  if (!deps.vite || !deps.react || !deps["@supabase/supabase-js"])
-    throw new Error("Unsupported stack: Vite + React + Supabase required.");
-  if (!fs.existsSync(path.join(root, "src/lib/supabase.ts")))
-    throw new Error("Unknown auth mapping. Clarification required.");
-  const authSource = safeRead(root, "src/lib/supabase.ts");
-  if (
-    ![
-      "@supabase/supabase-js",
-      "createClient",
-      "VITE_SUPABASE_URL",
-      "VITE_SUPABASE_ANON_KEY",
-      "export const supabase",
-    ].every((part) => authSource.includes(part))
-  )
-    throw new Error("Unknown auth mapping. Clarification required.");
-  const migrationDir = path.join(root, "supabase/migrations");
-  if (!fs.existsSync(migrationDir))
-    throw new Error(
-      "Missing server permission contracts. Clarification required.",
-    );
-  const sql = fs
-    .readdirSync(migrationDir)
-    .filter((file) => file.endsWith(".sql"))
-    .map((file) => safeRead(root, `supabase/migrations/${file}`))
-    .join("\n")
-    .toLowerCase();
-  if (
-    ![
-      "public.can_edit_workspace",
-      "public.workspace_feature_access",
-      "public.savings_cases",
-      "public.workspace_members",
-    ].every((name) => sql.includes(name))
-  )
-    throw new Error(
-      "Missing server permission contracts. Clarification required.",
-    );
+  if (p.feature !== "chat.reply") {
+    if (!deps.vite || !deps.react || !deps["@supabase/supabase-js"])
+      throw new Error("Unsupported stack: Vite + React + Supabase required.");
+    if (!fs.existsSync(path.join(root, "src/lib/supabase.ts")))
+      throw new Error("Unknown auth mapping. Clarification required.");
+    const authSource = safeRead(root, "src/lib/supabase.ts");
+    if (
+      ![
+        "@supabase/supabase-js",
+        "createClient",
+        "VITE_SUPABASE_URL",
+        "VITE_SUPABASE_ANON_KEY",
+        "export const supabase",
+      ].every((part) => authSource.includes(part))
+    )
+      throw new Error("Unknown auth mapping. Clarification required.");
+    const migrationDir = path.join(root, "supabase/migrations");
+    if (!fs.existsSync(migrationDir))
+      throw new Error(
+        "Missing server permission contracts. Clarification required.",
+      );
+    const sql = fs
+      .readdirSync(migrationDir)
+      .filter((file) => file.endsWith(".sql"))
+      .map((file) => safeRead(root, `supabase/migrations/${file}`))
+      .join("\n")
+      .toLowerCase();
+    if (
+      ![
+        "public.can_edit_workspace",
+        "public.workspace_feature_access",
+        "public.savings_cases",
+        "public.workspace_members",
+      ].every((name) => sql.includes(name))
+    )
+      throw new Error(
+        "Missing server permission contracts. Clarification required.",
+      );
+  }
   const plan = {
     version: 1,
-    adapter: "command-center-vite-supabase-v1",
+    adapter: p.feature === "chat.reply" ? publicChatAdapter : "command-center-vite-supabase-v1",
     source: snapshot(root),
     policy: p,
     files: outputs(root, p),
     acceptance: [
       "npm run build",
-      "npm test",
+      p.feature === "chat.reply" ? "MeterKit public-chat client/config and retired-route contracts" : "npm test",
       "MeterKit real-Postgres fixed acceptance contracts",
     ],
     limits: [
-      "Disabled alpha route only; no production activation",
+      p.feature === "chat.reply" ? "Exact standalone Next reference only; API/UI disabled; no checkout or production activation" : "Disabled alpha route only; no production activation",
       "Backend credentials, workspace/module approval, real PayPal and AI receipts remain required",
     ],
     ai: null,
@@ -277,7 +281,8 @@ export function applyPlan(root, plan, approvalHash) {
   const { approvalHash: expected, ...content } = plan;
   if (!expected || expected !== approvalHash || hash(content) !== expected)
     throw new Error("Explicit approval of the exact plan hash required.");
-  if (plan.adapter !== "command-center-vite-supabase-v1" || plan.version !== 1)
+  const expectedAdapter = plan.policy?.feature === "chat.reply" ? publicChatAdapter : "command-center-vite-supabase-v1";
+  if (plan.adapter !== expectedAdapter || plan.version !== 1)
     throw new Error("Unsupported plan.");
   if (snapshot(root) !== plan.source)
     throw new Error("Source changed since planning. Regenerate and review.");

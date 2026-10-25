@@ -1,3 +1,7 @@
+# Latest public installer checkpoint — 2026-10-25
+
+The exact standalone Next reference now has a source/plan-bound installer, disabled by default, with vendored audited kernel/client code. Full workspace tests pass with disposable Postgres; the generated standalone app builds and passes unavailable-home,14 retired-route and three disabled-alpha HTTP checks. See [installer scope and evidence](docs/PUBLIC_CHAT_INSTALLER.md). No hosted Auth/payment/model acceptance or real AI-planning receipt is implied. PR8 stays draft; alpha dashboard/hosted/payment gates remain.
+
 # Latest public-chat checkpoint — 2026-10-25
 
 PR8 remains draft. The opt-in public sandbox Auth/balance/job UI is wired and disabled by default. Twenty client/config contracts and eleven actual browser lifecycle checks pass with fixture Auth/balance/jobs. Metered-example build, TypeScript and scoped lint pass; hosted Auth/payment acceptance is **not** proven. See [current API/UI evidence](docs/PUBLIC_CHAT_API.md).

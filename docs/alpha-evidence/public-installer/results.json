@@ -1,0 +1,34 @@
+{
+  "label": "Disposable standalone reference; no hosted Auth/payment/model acceptance",
+  "adapter": "reference-next-public-chat-v1",
+  "approvalHash": "11c8bd9d04c88b1b00b7c704b326ef183d6efe35886a94fd89f6eb8386750258",
+  "files": [
+    "app/page.tsx",
+    "app/layout.tsx",
+    "app/api/chat/route.ts",
+    "app/api/export/route.ts",
+    "lib/meterkit-billing/LICENSE",
+    "lib/meterkit-brand.ts",
+    "app/globals.css",
+    "app/sandbox-chat.tsx",
+    "lib/alpha-client.ts",
+    "lib/ui-config.ts",
+    "app/api/alpha/[...path]/route.ts",
+    "lib/meterkit-billing/index.ts",
+    "lib/meterkit-billing/paypal.ts",
+    "lib/meterkit-billing/service.ts",
+    "lib/meterkit-billing/user-identity.ts",
+    "lib/meterkit-billing/public-chat.ts",
+    "lib/meterkit-billing/schema.sql",
+    "docs/METERKIT_PUBLIC_CHAT_INTEGRATION.md"
+  ],
+  "build": "PASS npm run build -- --webpack (Next TypeScript included)",
+  "http": {
+    "unavailableHome": true,
+    "retiredRoutes": 14,
+    "disabledAlphaMethods": 3
+  },
+  "realAIPlanning": false,
+  "environmentActivated": false,
+  "checkedAt": "2026-10-25T05:54:53.168Z"
+}
