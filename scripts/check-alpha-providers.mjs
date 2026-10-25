@@ -60,3 +60,6 @@ if (process.env.METERKIT_VERIFY_PROVIDERS === "true") {
   console.log("MeterKit Gemini generation: " + (gemini ? "PASS" : "FAIL"));
   // Diagnostic failure does not disguise the build result or enable the alpha.
 }
+
+// Separate opt-in read-only sandbox metadata check; never runs a model/payment.
+await import('./check-sandbox-config.mjs');

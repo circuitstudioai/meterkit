@@ -7,7 +7,7 @@
     "build": "node ../../scripts/check-alpha-providers.mjs && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest --config ./jest.config.cjs --passWithNoTests && npm run test:retired && tsx --test lib/wallet.test.ts",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --config ./jest.config.cjs --passWithNoTests && npm run test:retired && tsx --test lib/wallet.test.ts && node --test ../../scripts/check-sandbox-config.test.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx db/seed.ts",
