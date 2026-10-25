@@ -1,0 +1,14 @@
+{
+  "evidence": "Fixture-only PayPal/model/auth; real local Postgres",
+  "checks": [
+    "zero balance disables new generation",
+    "simulated PayPal create/approval/capture funds real Postgres wallet",
+    "confirmed provider failure releases reservation",
+    "completed explanation settles exactly five credits",
+    "retry returns stored explanation without another debit",
+    "mobile page has no horizontal overflow",
+    "new work blocked after balance reaches zero",
+    "no browser page errors"
+  ],
+  "errors": []
+}

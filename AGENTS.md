@@ -6,7 +6,7 @@ Product spec for contributing agents: [docs/PRD.md](docs/PRD.md). Stay inside wh
 
 Working name is **MeterKit**. Change it only in `packages/config/src/index.ts`.
 
-Hackathon deadline: **Nov 12, 2026, 12:00 PM PT**. Do not submit to Devpost. Sandbox only. Never commit secrets. No Circuit Signal / extension / Companion / roll-call content.
+Hackathon deadline: **Nov 12, 2026, 12:00 PM PT**. Do not submit to Devpost. Sandbox only. Never commit secrets. Command Center integration code is allowed; Circuit Signal's data collection method is never included. Use isolated test data only. Do not merge unrelated Signal features, activate production billing, or change free-core behavior.
 
 ## Commands
 
@@ -37,7 +37,11 @@ npx meterkit init        # dry-run
 - Idempotent ledger, no negative balances
 - PayPal captures to the builder; we store credits only
 
-## Open TODOs
+## Alpha execution
+
+The 2026-10-22 PRD supersedes original wallet-demo claims. Follow docs/ALPHA_MILESTONES.md. New billing code must use transactional Postgres and deterministic acceptance tests. Legacy demo APIs are not the alpha payment backend. Never call fixture evidence live PayPal/model acceptance.
+
+## Historical demo TODOs
 
 - Real PayPal + Gemini keys (Abhishek)
 - Hosted Vercel + Supabase

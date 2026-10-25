@@ -1,0 +1,12 @@
+{
+  "observedAt": "2026-10-25T06:26:21.913Z",
+  "evidence": "Local production build + fixture-only Auth/balance browser replies; no hosted Auth, payment, model or deployment acceptance.",
+  "checks": [
+    "default runtime offers no sign-in controls; unconfigured GET/POST/OPTIONS refuse with no-store",
+    "compiled enabled API rejects no session, mutations, wallet selector and foreign origin before database access",
+    "fixture sign-in shows available/held alpha credits; no passwords/tokens/refresh tokens in browser storage or rendered form",
+    "actual reload signs out without automatic balance request; second account never sees previous balance",
+    "401 on refresh clears displayed balance and memory session",
+    "local sign-out clears view; mobile layout has no horizontal overflow; no browser exceptions"
+  ]
+}

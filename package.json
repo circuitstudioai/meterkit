@@ -18,6 +18,7 @@
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "db:migrate": "npm run db:migrate -w @meterkit/dashboard",
-    "db:seed": "npm run db:seed -w @meterkit/dashboard"
+    "db:seed": "npm run db:seed -w @meterkit/dashboard",
+    "db:alpha": "tsx scripts/migrate-alpha.mts"
   }
 }

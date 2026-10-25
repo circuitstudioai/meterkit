@@ -9,10 +9,10 @@ export const BRAND = {
   cliBin: "meterkit",
   npmSdk: "@meterkit/sdk",
   npmReact: "@meterkit/react",
-  tagline: "Prepaid credits for your app features",
+  tagline: "Install PayPal credits. Verify the failure cases.",
   org: "Circuit Studio",
   feeNote:
-    "Free to start. 1–2% platform fee on top-ups above about $1,000/month. Pro dashboard later.",
+    "Commercial pricing is undecided. No platform fee is collected in this alpha.",
   settlementNote:
     "PayPal processes payments to the builder’s account. MeterKit records credit balances and usage.",
 } as const;
