@@ -27,6 +27,11 @@ sandbox credentials. No duplicate credentials, merchant/app or paid project crea
   Auth configuration are absent. The CLI diagnostic deployment did not receive the
   branch-only database variable; this does **not** mean the existing approved database
   or branch-scoped configuration is missing. Do not recreate the database.
+- Browser access check: PayPal Developer sandbox applications redirects to PayPal
+  sign-in in the available managed browser. Supabase dashboard also redirects to
+  sign-in; this does not invalidate previously configured CLI/database access. The
+  local linked project metadata names `meterkit-alpha`; it was preserved untouched.
+  No new credential was requested or supplied.
 - No Gemini generation was requested in this diagnostic. October23's hosted Gemini
   receipt remains prior evidence, not a newly executed model/job acceptance.
 
