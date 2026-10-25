@@ -163,6 +163,8 @@ export function createAlphaClient(config: ClientConfig) {
     },
     /** Local logout only; does not claim provider-wide token revocation. */
     signOut() { ++epoch; session = undefined; },
+    hasSession(): boolean { return !!session && session.expiresAt > now(); },
+    hasPendingJob(): boolean { return !!pending; },
     pendingJob(): ChatJob | undefined {
       return session && session.expiresAt > now() && pending?.owner === session.userId ? pending.job : undefined;
     },

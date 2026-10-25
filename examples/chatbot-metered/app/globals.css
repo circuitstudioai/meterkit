@@ -1,0 +1,26 @@
+:root { color-scheme: light; color: #172b36; background: #f3f6f7; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; line-height: 1.6; }
+.chat-shell { max-width: 760px; margin: 40px auto; padding: 0 20px 40px; }
+header { margin-bottom: 28px; }
+h1 { font-size: clamp(1.8rem, 6vw, 2.6rem); line-height: 1.2; }
+h2 { font-size: 1.2rem; margin-top: 0; }
+.eyebrow { color: #405e69; font-weight: 600; }
+section { background: white; border: 1px solid #c5d3d8; border-radius: 12px; padding: 24px; margin: 20px 0; }
+label { display: block; font-weight: 600; margin-bottom: 16px; }
+input:not([type=checkbox]), textarea { display: block; width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #708995; border-radius: 6px; font: inherit; background: white; color: inherit; }
+textarea { resize: vertical; }
+.consent { display: flex; gap: 12px; align-items: flex-start; }
+.consent input { flex-shrink: 0; margin-top: 7px; }
+button { font: inherit; font-weight: 600; background: #164e63; color: white; border: 1px solid #164e63; border-radius: 6px; padding: 10px 16px; cursor: pointer; min-height: 44px; }
+button:disabled { background: #e4eaed; border-color: #b7c6cc; color: #50636c; cursor: not-allowed; }
+:focus-visible { outline: 3px solid #b45309; outline-offset: 3px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.notice, .error { border-left: 4px solid #164e63; padding: 14px; background: #e4f0f5; }
+.error { border-color: #a52121; background: #fff0ef; }
+.response { white-space: pre-wrap; overflow-wrap: anywhere; }
+.request-id { overflow-wrap: anywhere; }
+summary { cursor: pointer; padding: 8px 0; }
+details { margin-bottom: 16px; }
+footer { font-size: .9rem; color: #405e69; }
+@media (max-width: 480px) { .chat-shell { margin-top: 24px; padding-inline: 16px; } section { padding: 18px; } }

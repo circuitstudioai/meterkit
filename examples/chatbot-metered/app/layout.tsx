@@ -1,3 +1,4 @@
+import "./globals.css";
 import { BRAND } from "@meterkit/config";
 
 export const metadata = {
@@ -7,7 +8,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ fontFamily: "ui-sans-serif, system-ui", margin: 0 }}>
+      <body>
         {children}
       </body>
     </html>

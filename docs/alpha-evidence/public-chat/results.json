@@ -1,0 +1,17 @@
+{
+  "evidence": "Actual local browser lifecycle; Auth/balance/jobs are HTTP fixtures, NOT hosted acceptance or payment/model evidence",
+  "checks": [
+    "default production build exposes no sign-in/job controls; API refuses unconfigured activation",
+    "explicit retention consent; pending journal contains exact input but no credentials",
+    "real reload signs out; another account cannot see, replace or reconcile original pending input",
+    "original owner explicitly reconciles byte-identical request after reload; confirmed result clears journal",
+    "local logout clears answer; verified zero balance blocks new work",
+    "confirmed failure release clears pending without claiming a completed answer",
+    "401 requires explicit sign-in and hides prior account state",
+    "390px mobile layout has no horizontal overflow; desktop/mobile fixture screenshots saved",
+    "idle session expiry hides private pending content without discarding recoverable work",
+    "unwritable tab recovery blocks before job network; no memory-only fallback",
+    "malformed recovery fails closed without discarding unknown work"
+  ],
+  "errors": []
+}

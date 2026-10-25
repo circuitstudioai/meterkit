@@ -1,3 +1,11 @@
+# Latest public-chat checkpoint — 2026-10-25
+
+PR8 remains draft. The opt-in public sandbox Auth/balance/job UI is wired and disabled by default. Twenty client/config contracts and eleven actual browser lifecycle checks pass with fixture Auth/balance/jobs. Metered-example build, TypeScript and scoped lint pass; hosted Auth/payment acceptance is **not** proven. See [current API/UI evidence](docs/PUBLIC_CHAT_API.md).
+
+Sandbox USD1 /50credits /5credits per action was approved in PM7140; the earlier policy-pending notes below are historical. Merchant ID, public webhook, separate buyer approval, hosted two-user Auth/model/job receipts, installer/dashboard integration and Command Center acceptance remain separate gates. No hosted settings, Production activation, purchase flow or paid infrastructure changed.
+
+---
+
 # Current alpha execution — 2026-10-23
 
 PR #8 remains draft and unmerged. A1 is accepted; A2–A4 still require live integration evidence. The last committed CI baseline passed 33 tests.
